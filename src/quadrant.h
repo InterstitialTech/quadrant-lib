@@ -9,6 +9,8 @@
 
 #include "Arduino.h"
 #include "Adafruit_VL53L0X.h"
+#include <MIDI.h>
+#include <SoftwareSerial.h>
 
 #define LED0 0
 #define LED1 23
@@ -24,6 +26,7 @@
 #define SHT_LOX1 24
 #define SHT_LOX2 19
 #define SHT_LOX3 13
+
 
 // index 0-3 maps to: led, lidar_enable, and lidar_addr, and dac_addr
 // TODO: switch index to NSEW
@@ -47,6 +50,8 @@ class Quadrant
         int readLidarContinuous(uint8_t index);
 
         void writeDac(uint8_t dac, int dacData);
+        void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
+
         const uint8_t leds[4]={LED0, LED1, LED2, LED3};
         void ledsOff();
 

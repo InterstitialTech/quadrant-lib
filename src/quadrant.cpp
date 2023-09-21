@@ -2,6 +2,10 @@
 #include <Wire.h>
 #include "quadrant.h"
 
+SoftwareSerial softSerial(11, 10);
+MIDI_NAMESPACE::SerialMIDI<SoftwareSerial> softSerialMidi(softSerial);
+MIDI_CREATE_INSTANCE(SoftwareSerial, softSerialMidi, QMIDI)
+
 Quadrant::Quadrant(){
 }
 
@@ -35,6 +39,18 @@ void Quadrant::begin(){
   Wire1.setSDA(6);
   Wire1.setSCL(7);
   Wire1.begin();
+
+
+  // MIDI
+  QMIDI.begin();
+
+}
+
+void Quadrant::sendMidiNoteOnOff(uint8_t note, uint8_t vel, uint8_t chan){
+
+  QMIDI.sendNoteOn(note, vel, chan);
+  delay(75);
+  QMIDI.sendNoteOff(note, 0, chan);
 
 }
 
@@ -159,3 +175,4 @@ int Quadrant::readLidar(uint8_t index) {
   return _measure[index].RangeMilliMeter;
 
 }
+
