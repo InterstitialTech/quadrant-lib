@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include "quadrant.h"
 
-SoftwareSerial softSerial(11, 10);
+SoftwareSerial softSerial(10, 11);
 MIDI_NAMESPACE::SerialMIDI<SoftwareSerial> softSerialMidi(softSerial);
 MIDI_CREATE_INSTANCE(SoftwareSerial, softSerialMidi, QMIDI)
 
