@@ -15,7 +15,7 @@ int notes[4] = {60, 65, 67, 70};
 void setup() {
 
   Serial.begin(115200);
-  while(!Serial);
+  //while(!Serial);
 
   myquad.begin();
   myquad.setLidarsContinuous();
@@ -57,6 +57,7 @@ void loop() {
     Serial.println(serial_buf);
     for (int i=0; i<4; i++) {
       if (triggered[i]) {
+        Serial.println("sending midi");
         myquad.sendMidiNoteOnOff(notes[i], 127, 1);
       }
     }

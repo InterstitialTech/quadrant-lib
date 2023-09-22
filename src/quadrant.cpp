@@ -2,18 +2,14 @@
 #include <Wire.h>
 #include "quadrant.h"
 
-SoftwareSerial softSerial(10, 11);
-MIDI_NAMESPACE::SerialMIDI<SoftwareSerial> softSerialMidi(softSerial);
-MIDI_CREATE_INSTANCE(SoftwareSerial, softSerialMidi, QMIDI)
+SerialPIO softSerial(11, SerialPIO::NOPIN);
+MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
+MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
 Quadrant::Quadrant(){
 }
 
 void Quadrant::begin(){
-
-  // Serial
-  Serial.begin(115200);
-  delay(800);
 
   // LEDS
   pinMode(LED0, OUTPUT); 
@@ -42,6 +38,7 @@ void Quadrant::begin(){
 
 
   // MIDI
+  softSerial.setInverted(true,true);
   QMIDI.begin();
 
 }
@@ -51,6 +48,18 @@ void Quadrant::sendMidiNoteOnOff(uint8_t note, uint8_t vel, uint8_t chan){
   QMIDI.sendNoteOn(note, vel, chan);
   delay(75);
   QMIDI.sendNoteOff(note, 0, chan);
+
+}
+
+void Quadrant::sendMidiNoteOnOffRaw(uint8_t note, uint8_t vel, uint8_t chan){
+
+  softSerial.write((uint8_t) (0x8 << 4) | (chan & 0b1111));
+  softSerial.write((uint8_t) note & 0b1111111);
+  softSerial.write((uint8_t) vel & 0b1111111);
+  delay(100);
+  softSerial.write((uint8_t) (0x9 << 4) | (chan & 0b1111));
+  softSerial.write((uint8_t) note & 0b1111111);
+  softSerial.write((uint8_t) 0);
 
 }
 

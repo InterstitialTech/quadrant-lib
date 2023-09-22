@@ -10,7 +10,6 @@
 #include "Arduino.h"
 #include "Adafruit_VL53L0X.h"
 #include <MIDI.h>
-#include <SoftwareSerial.h>
 
 #define LED0 0
 #define LED1 23
@@ -51,6 +50,7 @@ class Quadrant
 
         void writeDac(uint8_t dac, int dacData);
         void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
+        void sendMidiNoteOnOffRaw(uint8_t, uint8_t, uint8_t);
 
         const uint8_t leds[4]={LED0, LED1, LED2, LED3};
         void ledsOff();
