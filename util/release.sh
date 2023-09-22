@@ -21,4 +21,4 @@ cp -r ../src ../examples ../LICENSE ../README.md ../library.properties $TLD
 
 zip -r "$TLD".zip $TLD
 rm -rf $TLD
-
+echo "Created $TLD.zip"
