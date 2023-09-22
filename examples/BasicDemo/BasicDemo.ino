@@ -1,3 +1,14 @@
+/*
+
+  BasicDemo.ino
+  Chris Chronopoulos, 2023
+
+  This sketch demonstrates the basic functionality of the board. It measures
+  all four channels and maps them to the 4 CV outputs. It also prints the
+  channel values over USB serial.
+
+*/
+
 #include "quadrant.h"
 
 #define LED_THRESH 180

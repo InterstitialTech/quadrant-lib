@@ -1,5 +1,11 @@
 /*
-  Send a MIDI on+off when a channel's beam is crossed.
+
+  MidiDemo.ino
+  Chris Chronopoulos, 2023
+
+  This sketch sends a MIDI-On followed by MIDI-Off when a channel's beam is
+  crossed.
+
 */
 
 #include "quadrant.h"
