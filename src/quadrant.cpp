@@ -46,7 +46,7 @@ void Quadrant::begin(){
 void Quadrant::sendMidiNoteOnOff(uint8_t note, uint8_t vel, uint8_t chan){
 
   QMIDI.sendNoteOn(note, vel, chan);
-  delay(75);
+  delay(20);
   QMIDI.sendNoteOff(note, 0, chan);
 
 }
