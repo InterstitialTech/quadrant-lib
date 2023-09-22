@@ -24,29 +24,6 @@ void loop() {
   t_last = micros();
   t_now = micros();
 
-  // slower (~32 Hz) but synchronous
-  /*
-  if (myquad.checkLidarsContinuous()) {
-    for(int i=0; i<4; i++){
-      value = myquad.readLidarContinuous(i);
-      if (value < LED_THRESH) {
-        digitalWrite(myquad.leds[i], HIGH);
-      } else {
-        digitalWrite(myquad.leds[i], LOW);
-      }
-      myquad.writeDac(i, value);
-      values[i] = value;
-    }
-    sprintf(serial_buf, "%d %d %d %d", values[0], values[1], values[2], values[3]);
-    Serial.println(serial_buf);
-    t_last = t_now;
-    t_now = micros();
-    Serial.print("Sample rate = ");
-    Serial.println(1000./(t_now - t_last));
-  }
-  */
-
-  // faster (~40-100 Hz) but asynchronous
   newValue = false;
   for(int i=0; i<4; i++){
     if (myquad.checkLidarContinuous(i)) {
@@ -61,13 +38,10 @@ void loop() {
       newValue = true;
     }
   }
+
   if (newValue) {
     sprintf(serial_buf, "%d %d %d %d", values[0], values[1], values[2], values[3]);
     Serial.println(serial_buf);
-    t_last = t_now;
-    t_now = micros();
-    Serial.print("Sample rate = ");
-    Serial.println(1e6/(t_now - t_last));
   }
 
 }
