@@ -34,13 +34,14 @@ Quadrant quadrant;
 void setup() {
 
   quadrant.begin();
+  Serial.begin(115200);
 
 }
 
 
 void loop() {
 
-  // update measurement and state variables
+  // take lidar measurement and update state variables
   quadrant.update();
 
   // set indicator leds
