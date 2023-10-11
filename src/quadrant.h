@@ -52,17 +52,37 @@ class Quadrant
         void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
         void sendMidiNoteOnOffRaw(uint8_t, uint8_t, uint8_t);
 
-        const uint8_t leds[4]={LED0, LED1, LED2, LED3};
+        void ledOn(int);
+        void ledOff(int);
+        void ledsOn();
         void ledsOff();
+
+        void initStateMachine(void);
+        void updateStateMachine(void);
+        float sampleRate(void);
+        int height(int);
+        bool engaged(int);
+        bool elevationEngaged(void);
+        bool pitchEngaged(void);
+        bool rollEngaged(void);
+        bool arcEngaged(void);
+        float elevation(void);
+        float pitch(void);
+        float roll(void);
+        float arc(void);
 
     private:
 
+        const uint8_t _leds[4] = {LED0, LED1, LED2, LED3};
         Adafruit_VL53L0X* _loxs[4];
         VL53L0X_RangingMeasurementData_t _measure[4];
         const uint8_t _dacAddress[4]={0x16,0x14,0x12,0x10};
         const uint8_t _lidarAddress[4]={LOX0_ADDRESS, LOX1_ADDRESS, LOX2_ADDRESS, LOX3_ADDRESS};
         const uint8_t _lidarEnable[4]={SHT_LOX0, SHT_LOX1, SHT_LOX2, SHT_LOX3};
         void _disableLidars();
+        int _height[4];
+        bool _engaged[4];
+        unsigned long _tlast, _tnow;
 
   };
 

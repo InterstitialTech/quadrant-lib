@@ -86,12 +86,31 @@ void Quadrant::_disableLidars(){
 
 }
 
-void Quadrant::ledsOff(){
+void Quadrant::ledOn(int index) {
 
-  digitalWrite(LED0, LOW);    
-  digitalWrite(LED1, LOW);
-  digitalWrite(LED2, LOW);
-  digitalWrite(LED3, LOW);
+  digitalWrite(_leds[index], HIGH);
+
+}
+
+void Quadrant::ledOff(int index) {
+
+  digitalWrite(_leds[index], LOW);
+
+}
+
+void Quadrant::ledsOn(void) {
+
+  for (int i=0; i<4; i++) {
+    digitalWrite(_leds[i], HIGH);
+  }
+
+}
+
+void Quadrant::ledsOff(void) {
+
+  for (int i=0; i<4; i++) {
+    digitalWrite(_leds[i], LOW);
+  }
 
 }
 
@@ -100,18 +119,18 @@ int Quadrant::setLidarAddress(uint8_t index, uint8_t addr) {
   ledsOff();
   delay(100);
 
-  digitalWrite(leds[index], HIGH);
+  digitalWrite(_leds[index], HIGH);
   digitalWrite(_lidarEnable[index], HIGH);
   delay(100);
 
   if(!_loxs[index]->begin(addr)) {
     Serial.print(F("Failed to boot VL53L0X "));
     Serial.println(index);
-    digitalWrite(leds[index], LOW);
+    digitalWrite(_leds[index], LOW);
     return 1;
   }
 
-  digitalWrite(leds[index], LOW);
+  digitalWrite(_leds[index], LOW);
 
   return 0;
 
@@ -178,6 +197,107 @@ int Quadrant::readLidar(uint8_t index) {
   }
   
   return _measure[index].RangeMilliMeter;
+
+}
+
+// state machine
+
+void Quadrant::initStateMachine(void) {
+
+  for (int i=0; i<4; i++) {
+    _height[i] = 8192;
+    _engaged[i] = false;
+  }
+
+  _tlast = micros();
+  _tnow = micros();
+
+}
+
+void Quadrant::updateStateMachine(void) {
+
+  bool done[4] = {false};
+
+  while (!(done[0] && done[1] && done[2] && done[3])) {
+    for (int i=0; i<4; i++) {
+      if (!done[i]) {
+        if (checkLidarContinuous(i)) {
+          _height[i] = readLidarContinuous(i);
+          _engaged[i] = (_height[i] < 300);
+          done[i] = true;
+        }
+      }
+    }
+  }
+
+  _tlast = _tnow;
+  _tnow = micros();
+
+}
+
+float Quadrant::sampleRate(void) {
+
+  return 1e6 / float(_tnow - _tlast);
+
+}
+
+int Quadrant::height(int index) {
+
+  return _height[index];
+
+}
+
+bool Quadrant::engaged(int index) {
+
+  return _engaged[index];
+
+}
+
+bool Quadrant::elevationEngaged(void) {
+
+  return _engaged[0] && _engaged[1] && _engaged[2] && _engaged[3];
+
+}
+
+bool Quadrant::pitchEngaged(void) {
+
+  return _engaged[1] && _engaged[3];
+
+}
+
+bool Quadrant::rollEngaged(void) {
+
+  return _engaged[0] && _engaged[2];
+
+}
+
+bool Quadrant::arcEngaged(void) {
+
+  return _engaged[0] && _engaged[1] && _engaged[2] && _engaged[3];
+
+}
+
+float Quadrant::elevation(void) {
+
+    return float(_height[0] + _height[1] + _height[2] + _height[3]) / 4;
+
+}
+
+float Quadrant::pitch(void) {
+
+    return float(_height[1] - _height[3]) / 300;
+
+}
+
+float Quadrant::roll(void) {
+
+    return float(_height[2] - _height[0]) / 300;
+
+}
+
+float Quadrant::arc(void) {
+
+    return float(_height[0] - _height[1] + _height[2] - _height[3]) / 600;
 
 }
 
