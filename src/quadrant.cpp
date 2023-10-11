@@ -88,7 +88,17 @@ bool Quadrant::isLidarEngaged(int index) {
 
 int Quadrant::getLidarDistance(int index) {
 
+  // distance in mm
+
   return _distance[index];
+
+}
+
+float Quadrant::getLidarDistanceNormalized(int index) {
+
+  // unit-less distance normalized to the engagement threshold
+
+  return float(_distance[index]) / _thresh;
 
 }
 
@@ -198,23 +208,15 @@ void Quadrant::setCV(int chan, float voltage) {
 
 }
 
-void Quadrant::sendMidiNoteOnOff(uint8_t note, uint8_t vel, uint8_t chan){
+void Quadrant::sendMidiNoteOn(uint8_t note, uint8_t vel, uint8_t chan){
 
   QMIDI.sendNoteOn(note, vel, chan);
-  delay(20);
-  QMIDI.sendNoteOff(note, 0, chan);
 
 }
 
-void Quadrant::sendMidiNoteOnOffRaw(uint8_t note, uint8_t vel, uint8_t chan){
+void Quadrant::sendMidiNoteOff(uint8_t note, uint8_t chan){
 
-  softSerial.write((uint8_t) (0x8 << 4) | (chan & 0b1111));
-  softSerial.write((uint8_t) note & 0b1111111);
-  softSerial.write((uint8_t) vel & 0b1111111);
-  delay(100);
-  softSerial.write((uint8_t) (0x9 << 4) | (chan & 0b1111));
-  softSerial.write((uint8_t) note & 0b1111111);
-  softSerial.write((uint8_t) 0);
+  QMIDI.sendNoteOff(note, 0, chan);
 
 }
 

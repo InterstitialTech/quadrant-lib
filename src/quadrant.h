@@ -48,6 +48,7 @@ class Quadrant {
     float getSampleRate(void);
     bool isLidarEngaged(int index);
     int getLidarDistance(int index);
+    float getLidarDistanceNormalized(int index);
     bool isElevationEngaged(void);
     float getElevation(void);
     bool isPitchEngaged(void);
@@ -62,8 +63,8 @@ class Quadrant {
     // outputs
     void setLed(int index, int state);
     void setCV(int chan, float voltage);
-    void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
-    void sendMidiNoteOnOffRaw(uint8_t, uint8_t, uint8_t);
+    void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
+    void sendMidiNoteOff(uint8_t, uint8_t);
 
   private:
 
