@@ -1,89 +1,89 @@
+/*
+  Quadrant.h - Library for using Quadrant
+  Created by Josh Muffin Gordonson (Interstitial Technology) on July 26 2023
+  Released under the CERN OHL 2.0
+*/
+
 #ifndef Quadrant_h
 #define Quadrant_h
-
-/*
-    Quadrant.h - Library for using Quadrant
-    Created by Josh Muffin Gordonson (Interstitial Technology) on July 26 2023
-    Released under the CERN OHL 2.0
-*/
 
 #include "Arduino.h"
 #include "Adafruit_VL53L0X.h"
 #include <MIDI.h>
 
-#define LED0 0
-#define LED1 23
-#define LED2 18
-#define LED3 12
+#define LED0_PIN 0
+#define LED1_PIN 23
+#define LED2_PIN 18
+#define LED3_PIN 12
 
-#define LOX0_ADDRESS 0x30
-#define LOX1_ADDRESS 0x31
-#define LOX2_ADDRESS 0x32
-#define LOX3_ADDRESS 0x33
+#define LIDAR0_ENABLE 1
+#define LIDAR1_ENABLE 24
+#define LIDAR2_ENABLE 19
+#define LIDAR3_ENABLE 13
 
-#define SHT_LOX0 1
-#define SHT_LOX1 24
-#define SHT_LOX2 19
-#define SHT_LOX3 13
+#define LIDAR0_ADDR 0x30
+#define LIDAR1_ADDR 0x31
+#define LIDAR2_ADDR 0x32
+#define LIDAR3_ADDR 0x33
+
+#define DAC0_ADDR 0x16
+#define DAC1_ADDR 0x14
+#define DAC2_ADDR 0x12
+#define DAC3_ADDR 0x10
+
+#define DEFAULT_ENGAGEMENT_THRESHOLD 300
 
 
-// index 0-3 maps to: led, lidar_enable, and lidar_addr, and dac_addr
-// TODO: switch index to NSEW
+class Quadrant {
 
-class Quadrant
-{
-    public:
+  public:
 
-        Quadrant();
-        void begin();
+    Quadrant();
 
-        int setLidarAddress(uint8_t index, uint8_t addr);
-        int readLidar(uint8_t index);
+    void begin();
+    void update();
+    void setEngagementThreshold(int);
 
-        void setLidarContinuous(uint8_t index);
-        void setLidarsContinuous();
+    // getters
+    float getSampleRate(void);
+    bool isLidarEngaged(int index);
+    int getLidarDistance(int index);
+    bool isElevationEngaged(void);
+    float getElevation(void);
+    bool isPitchEngaged(void);
+    float getPitch(void);
+    bool isRollEngaged(void);
+    float getRoll(void);
+    bool isArcEngaged(void);
+    float getArc(void);
 
-        bool checkLidarContinuous(uint8_t index);
-        bool checkLidarsContinuous(void);
+    // outputs
+    void setLed(int index, int state);
+    void setCV(int chan, float voltage);
+    void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
+    void sendMidiNoteOnOffRaw(uint8_t, uint8_t, uint8_t);
 
-        int readLidarContinuous(uint8_t index);
+  private:
 
-        void writeDac(uint8_t dac, int dacData);
-        void sendMidiNoteOnOff(uint8_t, uint8_t, uint8_t);
-        void sendMidiNoteOnOffRaw(uint8_t, uint8_t, uint8_t);
+    const uint8_t _ledPins[4] = {LED0_PIN, LED1_PIN, LED2_PIN, LED3_PIN};
+    const uint8_t _lidarPins[4]={LIDAR0_ENABLE, LIDAR1_ENABLE, LIDAR2_ENABLE, LIDAR3_ENABLE};
+    const uint8_t _lidarAddrs[4] = {LIDAR0_ADDR, LIDAR1_ADDR, LIDAR2_ADDR, LIDAR3_ADDR};
+    const uint8_t _dacAddrs[4] = {DAC0_ADDR, DAC1_ADDR, DAC2_ADDR, DAC3_ADDR};
 
-        void ledOn(int);
-        void ledOff(int);
-        void ledsOn();
-        void ledsOff();
+    Adafruit_VL53L0X* _lidars[4];
 
-        void initStateMachine(void);
-        void updateStateMachine(void);
-        float sampleRate(void);
-        int height(int);
-        bool engaged(int);
-        bool elevationEngaged(void);
-        bool pitchEngaged(void);
-        bool rollEngaged(void);
-        bool arcEngaged(void);
-        float elevation(void);
-        float pitch(void);
-        float roll(void);
-        float arc(void);
+    int _distance[4];
+    bool _engaged[4];
+    unsigned long _tlast, _tnow;
+    int _thresh;
 
-    private:
+    int _setLidarAddress(uint8_t index);
+    bool _isLidarReady(uint8_t index);
+    void _setLidarContinuous(uint8_t index);
+    int _readLidar(uint8_t index);
 
-        const uint8_t _leds[4] = {LED0, LED1, LED2, LED3};
-        Adafruit_VL53L0X* _loxs[4];
-        VL53L0X_RangingMeasurementData_t _measure[4];
-        const uint8_t _dacAddress[4]={0x16,0x14,0x12,0x10};
-        const uint8_t _lidarAddress[4]={LOX0_ADDRESS, LOX1_ADDRESS, LOX2_ADDRESS, LOX3_ADDRESS};
-        const uint8_t _lidarEnable[4]={SHT_LOX0, SHT_LOX1, SHT_LOX2, SHT_LOX3};
-        void _disableLidars();
-        int _height[4];
-        bool _engaged[4];
-        unsigned long _tlast, _tnow;
+    void _writeDac(uint8_t chan, int value);
 
-  };
+};
 
 #endif
