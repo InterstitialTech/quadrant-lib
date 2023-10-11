@@ -1,6 +1,5 @@
-#include <Arduino.h>
-#include <Wire.h>
 #include "quadrant.h"
+#include <Wire.h>
 
 SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
@@ -146,6 +145,40 @@ float Quadrant::getArc(void) {
   // returns a value between -1 and 1
 
     return float(_distance[0] - _distance[1] + _distance[2] - _distance[3]) / (2 * _thresh);
+
+}
+
+String Quadrant::getReportString(void) {
+
+  String report;
+  report = String("{");
+  report += "\"lidar0\":" + String(getLidarDistance(0)) + ", ";
+  report += "\"lidar1\":" + String(getLidarDistance(1)) + ", ";
+  report += "\"lidar2\":" + String(getLidarDistance(2)) + ", ";
+  report += "\"lidar3\":" + String(getLidarDistance(3)) + ", ";
+  report += "\"sampleRate\":" + String(getSampleRate()) + ", ";
+  if (isElevationEngaged()) {
+    report += "\"elevation\":" + String(getElevation(), 3) + ", ";
+  } else {
+    report += "\"elevation\":false, ";
+  }
+  if (isPitchEngaged()) {
+    report += "\"pitch\":" + String(getPitch()) + ", ";
+  } else {
+    report += "\"pitch\":false, ";
+  }
+  if (isRollEngaged()) {
+    report += "\"roll\":" + String(getRoll()) + ", ";
+  } else {
+    report += "\"roll\":false, ";
+  }
+  if (isArcEngaged()) {
+    report += "\"arc\":" + String(getArc()) + "}";
+  } else {
+    report += "\"arc\":false}";
+  }
+
+  return report;
 
 }
 

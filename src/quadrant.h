@@ -57,6 +57,8 @@ class Quadrant {
     bool isArcEngaged(void);
     float getArc(void);
 
+    String getReportString(void);
+
     // outputs
     void setLed(int index, int state);
     void setCV(int chan, float voltage);
