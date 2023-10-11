@@ -101,7 +101,9 @@ bool Quadrant::isElevationEngaged(void) {
 
 float Quadrant::getElevation(void) {
 
-    return float(_distance[0] + _distance[1] + _distance[2] + _distance[3]) / 4;
+  // returns a value between 0 and 1
+
+  return float(_distance[0] + _distance[1] + _distance[2] + _distance[3]) / (4 * _thresh);
 
 }
 
@@ -113,7 +115,9 @@ bool Quadrant::isPitchEngaged(void) {
 
 float Quadrant::getPitch(void) {
 
-    return float(_distance[1] - _distance[3]) / 300;
+  // returns a value between -1 and 1
+
+    return float(_distance[1] - _distance[3]) / _thresh;
 
 }
 
@@ -125,7 +129,9 @@ bool Quadrant::isRollEngaged(void) {
 
 float Quadrant::getRoll(void) {
 
-    return float(_distance[2] - _distance[0]) / 300;
+  // returns a value between -1 and 1
+
+    return float(_distance[0] - _distance[2]) / _thresh;
 
 }
 
@@ -137,7 +143,9 @@ bool Quadrant::isArcEngaged(void) {
 
 float Quadrant::getArc(void) {
 
-    return float(_distance[0] - _distance[1] + _distance[2] - _distance[3]) / 600;
+  // returns a value between -1 and 1
+
+    return float(_distance[0] - _distance[1] + _distance[2] - _distance[3]) / (2 * _thresh);
 
 }
 
