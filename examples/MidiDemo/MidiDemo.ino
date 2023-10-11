@@ -8,64 +8,54 @@
 
 */
 
+#define MIDI_CHAN 1
+int notes[4] = {60, 65, 67, 70};
+
 #include "quadrant.h"
 
-#define LED_THRESH 180
+Quadrant quadrant;
 
-Quadrant myquad;
+bool wasEngaged[4] = {false};
 
-int values[4] = {8192, 8192, 8192, 8192};
-char serial_buf[21];
-int notes[4] = {60, 65, 67, 70};
-bool engaged[4] = {false};
-bool triggered[4] = {false};
 
 void setup() {
 
+  quadrant.begin();
   Serial.begin(115200);
-
-  myquad.begin();
-  myquad.setLidarsContinuous();
 
 }
 
+
 void loop() {
 
-  int value;
-  bool newValue;
-  bool crossed;
+  uint8_t velocity;
 
-  newValue = false;
+  // take lidar measurement and update state variables
+  quadrant.update();
 
-  for(int i=0; i<4; i++){
-    if (myquad.checkLidarContinuous(i)) {
-      value = myquad.readLidarContinuous(i);
-      if (value < LED_THRESH) {
-        if (!engaged[i]) {
-          triggered[i] = true;
-        }
-        engaged[i] = true;
-        digitalWrite(myquad.leds[i], HIGH);
-      } else {
-        engaged[i] = false;
-        digitalWrite(myquad.leds[i], LOW);
-      }
-      myquad.writeDac(i, value);
-      values[i] = value;
-      newValue = true;
+  // set indicator leds
+  for (int i=0; i<4; i++) {
+    if (quadrant.isLidarEngaged(i)) {
+      quadrant.setLed(i, HIGH);
+    } else {
+      quadrant.setLed(i, LOW);
     }
+  }
+
+  // trigger logic
+  for(int i=0; i<4; i++){
+    if (quadrant.isLidarEngaged(i)) {
+      if (!wasEngaged[i]) {
+        velocity = (uint8_t) 127 * (1 - quadrant.getLidarDistanceNormalized(i));
+        quadrant.sendMidiNoteOn(notes[i], velocity, MIDI_CHAN);
+      }
+    } else {
+      if (wasEngaged[i]) {
+        quadrant.sendMidiNoteOff(notes[i], MIDI_CHAN);
+      }
+    }
+    wasEngaged[i] = quadrant.isLidarEngaged(i);
   }
   
-  if (newValue) {
-    sprintf(serial_buf, "%d %d %d %d", values[0], values[1], values[2], values[3]);
-    Serial.println(serial_buf);
-    for (int i=0; i<4; i++) {
-      if (triggered[i]) {
-        myquad.sendMidiNoteOnOff(notes[i], 127, 1);
-        triggered[i] = false;
-      }
-    }
-  }
-
 }
 
