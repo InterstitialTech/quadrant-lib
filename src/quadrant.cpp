@@ -170,11 +170,7 @@ int Quadrant::readLidarContinuous(uint8_t index){
 
 int Quadrant::readLidar(uint8_t index) {
 
-  digitalWrite(leds[index], HIGH);
-
   _loxs[index]->rangingTest(&_measure[index], false); // pass in 'true' to get debug data printout!
-
-  digitalWrite(leds[index], LOW);
 
   if(_measure[index].RangeStatus == 4) {
     Serial.print(F("Out of range: index =  "));
