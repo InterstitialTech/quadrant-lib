@@ -11,7 +11,7 @@
 #define MIDI_CHAN 1
 int notes[4] = {60, 65, 67, 70};
 
-#include "quadrant.h"
+#include "Quadrant.h"
 
 Quadrant quadrant;
 

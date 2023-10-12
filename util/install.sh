@@ -12,4 +12,4 @@ if [[ $? == 1 ]]; then
     echo "To overwrite existing library, use $0 -f"
     exit
 fi
-cp -r ../src ../examples ../LICENSE ../README.md ../library.properties $TARGET_DIR
+cp -r ../src ../examples ../LICENSE ../README.md ../library.properties ../keywords.txt $TARGET_DIR

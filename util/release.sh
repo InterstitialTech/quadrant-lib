@@ -17,7 +17,7 @@ fi
 
 TLD=Interstitial_Quadrant-"$tag"
 mkdir $TLD
-cp -r ../src ../examples ../LICENSE ../README.md ../library.properties $TLD
+cp -r ../src ../examples ../LICENSE ../README.md ../library.properties ../keywords.txt $TLD
 
 zip -r "$TLD".zip $TLD
 rm -rf $TLD

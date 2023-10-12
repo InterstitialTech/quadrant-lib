@@ -1,4 +1,4 @@
-#include "quadrant.h"
+#include "Quadrant.h"
 #include <Wire.h>
 #include <ArduinoJson.h>
 

@@ -26,7 +26,7 @@
 #define CV_GAIN_ROLL   4.0
 #define CV_GAIN_ARC    10.0
 
-#include "quadrant.h"
+#include "Quadrant.h"
 
 Quadrant quadrant;
 
