@@ -73,8 +73,8 @@ void loop() {
     quadrant.setCV(3, 2.5 + quadrant.getArc() * 2.5 * CV_GAIN_ARC);
   }
 
-  // print to USB serial
-  Serial.println(quadrant.getReportString());
+  // print status report to USB serial
+  quadrant.printReportToSerial();
 
 }
 

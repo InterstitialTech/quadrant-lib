@@ -58,7 +58,7 @@ class Quadrant {
     bool isArcEngaged(void);
     float getArc(void);
 
-    String getReportString(void);
+    void printReportToSerial(void);
 
     // outputs
     void setLed(int index, int state);
@@ -88,5 +88,6 @@ class Quadrant {
     void _writeDac(uint8_t chan, int value);
 
 };
+
 
 #endif

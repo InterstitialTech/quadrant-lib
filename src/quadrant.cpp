@@ -1,5 +1,6 @@
 #include "quadrant.h"
 #include <Wire.h>
+#include <ArduinoJson.h>
 
 SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
@@ -158,37 +159,54 @@ float Quadrant::getArc(void) {
 
 }
 
-String Quadrant::getReportString(void) {
+double _round3(double value) {
 
-  String report;
-  report = String("{");
-  report += "\"lidar0\":" + String(getLidarDistance(0)) + ", ";
-  report += "\"lidar1\":" + String(getLidarDistance(1)) + ", ";
-  report += "\"lidar2\":" + String(getLidarDistance(2)) + ", ";
-  report += "\"lidar3\":" + String(getLidarDistance(3)) + ", ";
-  report += "\"sampleRate\":" + String(getSampleRate()) + ", ";
-  if (isElevationEngaged()) {
-    report += "\"elevation\":" + String(getElevation(), 3) + ", ";
-  } else {
-    report += "\"elevation\":false, ";
-  }
-  if (isPitchEngaged()) {
-    report += "\"pitch\":" + String(getPitch()) + ", ";
-  } else {
-    report += "\"pitch\":false, ";
-  }
-  if (isRollEngaged()) {
-    report += "\"roll\":" + String(getRoll()) + ", ";
-  } else {
-    report += "\"roll\":false, ";
-  }
-  if (isArcEngaged()) {
-    report += "\"arc\":" + String(getArc()) + "}";
-  } else {
-    report += "\"arc\":false}";
-  }
+    // convenience function for limiting sig figs in json serialization
 
-  return report;
+   return (int)(value * 1000 + 0.5) / 1000.0;
+
+}
+
+void Quadrant::printReportToSerial(void) {
+
+  StaticJsonDocument<512> report;
+
+  JsonObject lidar0 = report.createNestedObject("lidar0");
+  lidar0["distance"] = getLidarDistance(0);
+  lidar0["engaged"] = isLidarEngaged(0);
+
+  JsonObject lidar1 = report.createNestedObject("lidar1");
+  lidar1["distance"] = getLidarDistance(1);
+  lidar1["engaged"] = isLidarEngaged(1);
+
+  JsonObject lidar2 = report.createNestedObject("lidar2");
+  lidar2["distance"] = getLidarDistance(2);
+  lidar2["engaged"] = isLidarEngaged(2);
+
+  JsonObject lidar3 = report.createNestedObject("lidar3");
+  lidar3["distance"] = getLidarDistance(3);
+  lidar3["engaged"] = isLidarEngaged(3);
+
+  JsonObject elevation = report.createNestedObject("elevation");
+  elevation["value"] = _round3(getElevation());
+  elevation["engaged"] = isElevationEngaged();
+
+  JsonObject pitch = report.createNestedObject("pitch");
+  pitch["value"] = _round3(getPitch());
+  pitch["engaged"] = isPitchEngaged();
+
+  JsonObject roll = report.createNestedObject("roll");
+  roll["value"] = _round3(getRoll());
+  roll["engaged"] = isRollEngaged();
+
+  JsonObject arc = report.createNestedObject("arc");
+  arc["value"] = _round3(getArc());
+  arc["engaged"] = isArcEngaged();
+
+  report["sampleRate"] = _round3(getSampleRate());
+
+  serializeJson(report, Serial);
+  Serial.println();
 
 }
 
