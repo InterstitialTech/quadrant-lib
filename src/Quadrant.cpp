@@ -238,6 +238,12 @@ void Quadrant::sendMidiNoteOff(uint8_t note, uint8_t chan){
 
 }
 
+void Quadrant::sendMidiControlChange(uint8_t control_number, uint8_t val, uint8_t chan){
+
+  QMIDI.sendControlChange(control_number, val, chan);
+
+}
+
 // private methods below
 
 int Quadrant::_setLidarAddress(uint8_t index) {
