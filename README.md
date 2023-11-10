@@ -8,7 +8,7 @@
 quadrant-lib is now available for installation directly from the Arduino IDE:
 
 <p align="center">
-  <src="https://github.com/InterstitialTech/quadrant-lib/assets/1569715/8f28e7e5-8895-4767-b66f-b70addb3fb5e">
+  <img src="https://github.com/InterstitialTech/quadrant-lib/assets/1569715/8f28e7e5-8895-4767-b66f-b70addb3fb5e">
 </p>
 
 Alternatively, you can download the latest zip file from the GitHub releases, and follow the directions
