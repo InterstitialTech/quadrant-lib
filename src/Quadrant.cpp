@@ -113,7 +113,21 @@ float Quadrant::getElevation(void) {
 
   // returns a value between 0 and 1
 
-  return float(_distance[0] + _distance[1] + _distance[2] + _distance[3]) / (4 * _thresh);
+  int count = 0;
+  float total_distance = 0;
+
+  for (int i=0; i<4; i++) {
+    if (isLidarEngaged(i)) {
+      total_distance += getLidarDistanceNormalized(i);      
+      count += 1;
+    }
+  }
+
+  if (count == 0) {
+    return 1.;
+  } else {
+    return total_distance / count;
+  }
 
 }
 
