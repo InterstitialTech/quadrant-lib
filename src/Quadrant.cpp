@@ -21,6 +21,7 @@ void Quadrant::begin(){
     digitalWrite(_lidarPins[i], LOW);    
     _lidars[i] = new Adafruit_VL53L0X();
     _setLidarAddress(i);
+    _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
     _setLidarContinuous(i);
   }
 
@@ -281,6 +282,18 @@ int Quadrant::_setLidarAddress(uint8_t index) {
   digitalWrite(_ledPins[index], LOW);
 
   return 0;
+
+}
+
+void Quadrant::_setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_config_t profile){
+
+  // profile can be one of:
+  //    VL53L0X_SENSE_DEFAULT
+  //    VL53L0X_SENSE_LONG_RANGE
+  //    VL53L0X_SENSE_HIGH_SPEED
+  //    VL53L0X_SENSE_HIGH_ACCURACY
+
+  _lidars[index]->configSensor(profile);
 
 }
 
