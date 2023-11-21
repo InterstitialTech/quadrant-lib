@@ -62,7 +62,7 @@ void Quadrant::update(void) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
           _distance[i] = _readLidar(i);
-          _engaged[i] = (_distance[i] < 300);
+          _engaged[i] = (_distance[i] < _thresh);
           done[i] = true;
         }
       }
@@ -77,18 +77,20 @@ void Quadrant::update(void) {
 void Quadrant::update_boxcar(void) {
 
   bool done[4] = {false};
+  int d;
 
   while (!(done[0] && done[1] && done[2] && done[3])) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
-          _boxcar[_iboxcar*_len_boxcar + i] = _readLidar(i);
-          _distance[i] = 0;
-          for (int j=0; j<(_len_boxcar); j++) {
-              _distance[i] += _boxcar[j*_len_boxcar + i];
+          d = _readLidar(i);
+          _boxcar[_iboxcar*4 + i] = d;
+          _engaged[i] = (d < _thresh);
+          d = 0;
+          for (int j=0; j<_len_boxcar; j++) {
+              d += _boxcar[j*4 + i];
           }
-          _distance[i] = round(float(_distance[i]) / _len_boxcar);
-          _engaged[i] = (_distance[i] < 300);
+          _distance[i] = round(float(d) / _len_boxcar);
           done[i] = true;
         }
       }
