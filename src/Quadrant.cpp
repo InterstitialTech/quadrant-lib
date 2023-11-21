@@ -74,6 +74,48 @@ void Quadrant::update(void) {
 
 }
 
+void Quadrant::update_boxcar(void) {
+
+  bool done[4] = {false};
+
+  while (!(done[0] && done[1] && done[2] && done[3])) {
+    for (int i=0; i<4; i++) {
+      if (!done[i]) {
+        if (_isLidarReady(i)) {
+          _boxcar[_iboxcar*_len_boxcar + i] = _readLidar(i);
+          _distance[i] = 0;
+          for (int j=0; j<(_len_boxcar); j++) {
+              _distance[i] += _boxcar[j*_len_boxcar + i];
+          }
+          _distance[i] = round(float(_distance[i]) / _len_boxcar);
+          _engaged[i] = (_distance[i] < 300);
+          done[i] = true;
+        }
+      }
+    }
+  }
+
+  _iboxcar += 1;
+  if (_iboxcar >= _len_boxcar) _iboxcar = 0;
+
+  _tlast = _tnow;
+  _tnow = micros();
+
+}
+
+void Quadrant::setBoxcarLength(uint8_t len) {
+
+    _boxcar = (int*) malloc(len * 4 * sizeof(int));
+
+    for (int i=0; i<(len*4); i++) {
+        _boxcar[i] = 8192;
+    }
+
+    _len_boxcar = len;
+    _iboxcar = 0;
+}
+
+
 // getters
 
 float Quadrant::getSampleRate(void) {

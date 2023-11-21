@@ -42,7 +42,9 @@ class Quadrant {
 
     void begin();
     void update();
+    void update_boxcar();
     void setEngagementThreshold(int);
+    void setBoxcarLength(uint8_t len);
 
     // getters
     float getSampleRate(void);
@@ -77,6 +79,9 @@ class Quadrant {
     Adafruit_VL53L0X* _lidars[4];
 
     int _distance[4];
+    int *_boxcar;
+    uint8_t _len_boxcar;
+    uint8_t _iboxcar;
     bool _engaged[4];
     unsigned long _tlast, _tnow;
     int _thresh;
