@@ -6,7 +6,17 @@ SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
 MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
-Quadrant::Quadrant() {}
+Quadrant::Quadrant() {
+
+  for (int i=0; i<4; i++) {
+    _distance[i] = 8192;
+    _engaged[i] = false;
+    _lidarEnabled[i] = false;
+  }
+
+  _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
+
+}
 
 void Quadrant::begin(){
 
@@ -22,7 +32,7 @@ void Quadrant::begin(){
     _lidars[i] = new Adafruit_VL53L0X();
     _setLidarAddress(i);
     _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
-    _setLidarContinuous(i);
+    setLidarEnabled(i, true);
   }
 
   // DAC
@@ -34,16 +44,28 @@ void Quadrant::begin(){
   softSerial.setInverted(true,true);
   QMIDI.begin();
 
-  // state variables
-  for (int i=0; i<4; i++) {
-    _distance[i] = 8192;
-    _engaged[i] = false;
-  }
-  _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
 
   // sample timer
   _tlast = micros();
   _tnow = micros();
+
+}
+
+void Quadrant::setLidarEnabled(int index, bool enabled) {
+
+  if (enabled) {
+    _startContinuousRanging(index);
+    _lidarEnabled[index] = true;
+  } else {
+    _stopContinuousRanging(index);
+    _lidarEnabled[index] = false;
+  }
+
+}
+
+bool Quadrant::isLidarEnabled(int index) {
+
+  return _lidarEnabled[index];
 
 }
 
@@ -55,7 +77,11 @@ void Quadrant::setEngagementThreshold(int value) {
 
 void Quadrant::update(void) {
 
-  bool done[4] = {false};
+  bool done[4];
+
+  for (int i=0; i<4; i++) {
+    done[i] = !isLidarEnabled(i);
+  }
 
   while (!(done[0] && done[1] && done[2] && done[3])) {
     for (int i=0; i<4; i++) {
@@ -76,8 +102,12 @@ void Quadrant::update(void) {
 
 void Quadrant::update_boxcar(void) {
 
-  bool done[4] = {false};
+  bool done[4];
   int d;
+
+  for (int i=0; i<4; i++) {
+    done[i] = !isLidarEnabled(i);
+  }
 
   while (!(done[0] && done[1] && done[2] && done[3])) {
     for (int i=0; i<4; i++) {
@@ -341,9 +371,15 @@ void Quadrant::_setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_c
 
 }
 
-void Quadrant::_setLidarContinuous(uint8_t index){
+void Quadrant::_startContinuousRanging(uint8_t index){
 
   _lidars[index]->startRangeContinuous();
+
+}
+
+void Quadrant::_stopContinuousRanging(uint8_t index){
+
+  _lidars[index]->stopRangeContinuous();
 
 }
 

@@ -43,8 +43,11 @@ class Quadrant {
     void begin();
     void update();
     void update_boxcar();
+
+    // setters
     void setEngagementThreshold(int);
     void setBoxcarLength(uint8_t len);
+    void setLidarEnabled(int index, bool enabled);
 
     // getters
     float getSampleRate(void);
@@ -59,6 +62,7 @@ class Quadrant {
     float getRoll(void);
     bool isArcEngaged(void);
     float getArc(void);
+    bool isLidarEnabled(int index);
 
     void printReportToSerial(void);
 
@@ -83,13 +87,15 @@ class Quadrant {
     uint8_t _len_boxcar;
     uint8_t _iboxcar;
     bool _engaged[4];
+    bool _lidarEnabled[4];
     unsigned long _tlast, _tnow;
     int _thresh;
 
     int _setLidarAddress(uint8_t index);
     bool _isLidarReady(uint8_t index);
     void _setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_config_t profile);
-    void _setLidarContinuous(uint8_t index);
+    void _startContinuousRanging(uint8_t index);
+    void _stopContinuousRanging(uint8_t index);
     int _readLidar(uint8_t index);
 
     void _writeDac(uint8_t chan, int value);
