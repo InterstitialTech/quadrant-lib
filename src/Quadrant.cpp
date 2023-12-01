@@ -6,8 +6,9 @@ SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
 MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
-Quadrant::Quadrant() {
+void Quadrant::begin(){
 
+  // initialize private variables
   for (int i=0; i<4; i++) {
     _distance[i] = 65536;
     _engaged[i] = false;
@@ -15,10 +16,6 @@ Quadrant::Quadrant() {
   }
 
   _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
-
-}
-
-void Quadrant::begin(){
 
   // LEDS
   for (int i=0; i<4; i++) {
@@ -373,7 +370,7 @@ void Quadrant::_setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_c
 
 void Quadrant::_startContinuousRanging(uint8_t index){
 
-  _lidars[index]->startRangeContinuous(1);
+  _lidars[index]->startRangeContinuous(10);
 
 }
 
@@ -385,13 +382,29 @@ void Quadrant::_stopContinuousRanging(uint8_t index){
 
 bool Quadrant::_isLidarReady(uint8_t index){
 
-  return _lidars[index]->isRangeComplete();
+  bool complete;
+
+  complete = _lidars[index]->isRangeComplete();
+
+  if (_lidars[index]->Status != VL53L0X_ERROR_NONE) {
+    Serial.println("isRangeComplete failed");
+  }
+
+  return complete;
 
 }
 
 int Quadrant::_readLidar(uint8_t index){
 
-  return _lidars[index]->readRangeResult();
+  int d;
+
+  d = _lidars[index]->readRangeResult();
+
+  if (_lidars[index]->Status != VL53L0X_ERROR_NONE) {
+    Serial.println("readRangeResult failed");
+  }
+
+  return d;
 
 }
 

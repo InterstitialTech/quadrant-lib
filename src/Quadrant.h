@@ -38,8 +38,6 @@ class Quadrant {
 
   public:
 
-    Quadrant();
-
     void begin();
     void update();
     void update_boxcar();
