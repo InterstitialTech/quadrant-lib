@@ -9,7 +9,7 @@ MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 Quadrant::Quadrant() {
 
   for (int i=0; i<4; i++) {
-    _distance[i] = 8192;
+    _distance[i] = 65536;
     _engaged[i] = false;
     _lidarEnabled[i] = false;
   }
@@ -31,7 +31,7 @@ void Quadrant::begin(){
     digitalWrite(_lidarPins[i], LOW);    
     _lidars[i] = new Adafruit_VL53L0X();
     _setLidarAddress(i);
-    _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_DEFAULT);
+    _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_SPEED);
     setLidarEnabled(i, true);
   }
 
@@ -140,7 +140,7 @@ void Quadrant::setBoxcarLength(uint8_t len) {
     _boxcar = (int*) malloc(len * 4 * sizeof(int));
 
     for (int i=0; i<(len*4); i++) {
-        _boxcar[i] = 8192;
+        _boxcar[i] = 65536;
     }
 
     _len_boxcar = len;
@@ -373,7 +373,7 @@ void Quadrant::_setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_c
 
 void Quadrant::_startContinuousRanging(uint8_t index){
 
-  _lidars[index]->startRangeContinuous();
+  _lidars[index]->startRangeContinuous(1);
 
 }
 
@@ -385,25 +385,13 @@ void Quadrant::_stopContinuousRanging(uint8_t index){
 
 bool Quadrant::_isLidarReady(uint8_t index){
 
-  bool resp;
-
-  resp =_lidars[index]->isRangeComplete();
-
-  if (_lidars[index]->Status != VL53L0X_ERROR_NONE) {
-    Serial.print(F("Lidar index "));
-    Serial.print(index);
-    Serial.print(F(" returned Status = "));
-    Serial.println(_lidars[index]->Status);
-    return false;
-  }
-
-  return resp;
+  return _lidars[index]->isRangeComplete();
 
 }
 
 int Quadrant::_readLidar(uint8_t index){
 
-  return _lidars[index]->readRange();
+  return _lidars[index]->readRangeResult();
 
 }
 
