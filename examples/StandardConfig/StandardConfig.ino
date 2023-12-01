@@ -33,9 +33,11 @@ Quadrant quadrant;
 
 void setup() {
 
-  quadrant.begin();
-  quadrant.setBoxcarLength(2);
   Serial.begin(115200);
+  delay(100);
+
+  quadrant.begin();
+  quadrant.setBoxcarLength(3);
 
 }
 
