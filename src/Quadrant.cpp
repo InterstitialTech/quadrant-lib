@@ -26,6 +26,9 @@ void Quadrant::begin(){
   for (int i=0; i<4; i++) {
     pinMode(_lidarPins[i], OUTPUT);
     digitalWrite(_lidarPins[i], LOW);    
+  }
+  delay(100);
+  for (int i=0; i<4; i++) {
     _lidars[i] = new Adafruit_VL53L0X();
     _setLidarAddress(i);
     _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_SPEED);
