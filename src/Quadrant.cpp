@@ -16,7 +16,7 @@ void Quadrant::begin(){
   }
 
   _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
-  _smode = QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED;
+  _smode = QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE;
   _filter_enabled = false;
 
   // LEDS
