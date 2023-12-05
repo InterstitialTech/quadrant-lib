@@ -16,20 +16,21 @@ void Quadrant::begin(){
   }
 
   _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
+  _smode = QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE;
 
   // LEDS
   for (int i=0; i<4; i++) {
     pinMode(_ledPins[i], OUTPUT); 
+    digitalWrite(_ledPins[i], LOW);
   }
 
   // Lidars
   for (int i=0; i<4; i++) {
     pinMode(_lidarPins[i], OUTPUT);
-    digitalWrite(_lidarPins[i], LOW);    
-    _lidars[i] = new Adafruit_VL53L0X();
-    _setLidarAddress(i);
-    _setLidarProfile(i, Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_SPEED);
-    setLidarEnabled(i, true);
+    digitalWrite(_lidarPins[i], LOW);
+  }
+  for (int i=0; i<4; i++) {
+    _initLidar(i);
   }
 
   // DAC
@@ -50,13 +51,7 @@ void Quadrant::begin(){
 
 void Quadrant::setLidarEnabled(int index, bool enabled) {
 
-  if (enabled) {
-    _startContinuousRanging(index);
-    _lidarEnabled[index] = true;
-  } else {
-    _stopContinuousRanging(index);
-    _lidarEnabled[index] = false;
-  }
+  _lidarEnabled[index] = enabled;
 
 }
 
@@ -74,28 +69,24 @@ void Quadrant::setEngagementThreshold(int value) {
 
 void Quadrant::update(void) {
 
-  bool done[4];
-
-  for (int i=0; i<4; i++) {
-    done[i] = !isLidarEnabled(i);
+  switch (_smode) {
+    case QUADRANT_SAMPLINGMODE_SINGLE_SEQUENTIAL:
+      break;
+    case QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE:
+      _update_single_pipeline();
+      break;
+    case QUADRANT_SAMPLINGMODE_CONTINUOUS:
+      _update_continuous();
+      break;
+    case QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED:
+      _update_continuous();
+      break;
+    default:
+      break;
   }
-
-  while (!(done[0] && done[1] && done[2] && done[3])) {
-    for (int i=0; i<4; i++) {
-      if (!done[i]) {
-        if (_isLidarReady(i)) {
-          _distance[i] = _readLidar(i);
-          _engaged[i] = (_distance[i] < _thresh);
-          done[i] = true;
-        }
-      }
-    }
-  }
-
-  _tlast = _tnow;
-  _tnow = micros();
 
 }
+
 
 void Quadrant::update_boxcar(void) {
 
@@ -332,45 +323,31 @@ void Quadrant::sendMidiControlChange(uint8_t control_number, uint8_t val, uint8_
 
 // private methods below
 
-int Quadrant::_setLidarAddress(uint8_t index) {
+void Quadrant::_initLidar(int index) {
 
-  for (int i=0; i<4; i++) {
-    setLed(i, LOW);
-  }
-  delay(100);
+    digitalWrite(_ledPins[index], HIGH);
 
-  digitalWrite(_ledPins[index], HIGH);
-  digitalWrite(_lidarPins[index], HIGH);
-  delay(100);
+    digitalWrite(_lidarPins[index], HIGH);
+    delay(100);
 
-  if(!_lidars[index]->begin(_lidarAddrs[index])) {
-    Serial.print(F("Failed to boot VL53L0X "));
-    Serial.println(index);
+    _lidars[index] = new Adafruit_VL53L0X();
+
+    if(!_lidars[index]->begin(_lidarAddrs[index])) {
+      Serial.print(F("Failed to boot VL53L0X "));
+      Serial.println(index);
+    }
+
+    _lidars[index]->configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_SPEED);
+
+    setLidarEnabled(index, true);
+
     digitalWrite(_ledPins[index], LOW);
-    return 1;
-  }
-
-  digitalWrite(_ledPins[index], LOW);
-
-  return 0;
-
-}
-
-void Quadrant::_setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_config_t profile){
-
-  // profile can be one of:
-  //    VL53L0X_SENSE_DEFAULT
-  //    VL53L0X_SENSE_LONG_RANGE
-  //    VL53L0X_SENSE_HIGH_SPEED
-  //    VL53L0X_SENSE_HIGH_ACCURACY
-
-  _lidars[index]->configSensor(profile);
 
 }
 
 void Quadrant::_startContinuousRanging(uint8_t index){
 
-  _lidars[index]->startRangeContinuous(10);
+  _lidars[index]->startRangeContinuous(1);
 
 }
 
@@ -396,7 +373,7 @@ bool Quadrant::_isLidarReady(uint8_t index){
 
 int Quadrant::_readLidar(uint8_t index){
 
-  int d;
+  uint16_t d = 0xff;
 
   d = _lidars[index]->readRangeResult();
 
@@ -419,6 +396,58 @@ void Quadrant::_writeDac(uint8_t chan, int value){
   Wire1.write(value >> 2);
   Wire1.write((value & 0x03) << 6);
   Wire1.endTransmission();
+
+}
+
+void Quadrant::_update_single_pipeline(void) {
+
+  bool done[4] = {false, false, false, false};
+
+  // start all measuring at once
+  for (int i=0; i<4; i++) {
+    _lidars[i]->startMeasurement();
+  }
+
+  // poll in a loop, settings flags as readouts return
+  while (!(done[0] && done[1] && done[2] && done[3])) {
+    for (int i=0; i<4; i++) {
+      if (!done[i]) {
+        if (_lidars[i]->isRangeComplete()) {
+          _distance[i] = _lidars[i]->readRangeResult();  // modified lib
+          _engaged[i] = (_distance[i] < _thresh);
+          done[i] = true;
+        }
+      }
+    }
+  }
+
+  _tlast = _tnow;
+  _tnow = micros();
+
+}
+
+void Quadrant::_update_continuous(void) {
+
+  bool done[4];
+
+  for (int i=0; i<4; i++) {
+    done[i] = !isLidarEnabled(i);
+  }
+
+  while (!(done[0] && done[1] && done[2] && done[3])) {
+    for (int i=0; i<4; i++) {
+      if (!done[i]) {
+        if (_isLidarReady(i)) {
+          _distance[i] = _readLidar(i);
+          _engaged[i] = (_distance[i] < _thresh);
+          done[i] = true;
+        }
+      }
+    }
+  }
+
+  _tlast = _tnow;
+  _tnow = micros();
 
 }
 
