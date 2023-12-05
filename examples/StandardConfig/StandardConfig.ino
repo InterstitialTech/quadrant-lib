@@ -37,7 +37,6 @@ void setup() {
   delay(100);
 
   quadrant.begin();
-  quadrant.setBoxcarLength(3);
 
 }
 
@@ -45,7 +44,7 @@ void setup() {
 void loop() {
 
   // take lidar measurement and update state variables
-  quadrant.update_boxcar();
+  quadrant.update();
 
   // set indicator leds
   for (int i=0; i<4; i++) {

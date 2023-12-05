@@ -33,14 +33,21 @@
 
 #define DEFAULT_ENGAGEMENT_THRESHOLD 300
 
+enum Quadrant_SamplingMode {
+  QUADRANT_SAMPLINGMODE_SINGLE_SEQUENTIAL,
+  QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE,
+  QUADRANT_SAMPLINGMODE_CONTINUOUS,
+  QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED
+}; 
+
 
 class Quadrant {
 
   public:
 
-    void begin();
-    void update();
-    void update_boxcar();
+    void begin(void);
+    void update(void);
+    void update_boxcar(void);
 
     // setters
     void setEngagementThreshold(int);
@@ -88,12 +95,12 @@ class Quadrant {
     bool _lidarEnabled[4];
     unsigned long _tlast, _tnow;
     int _thresh;
+    enum Quadrant_SamplingMode _smode;
 
-    int _setLidarAddress(uint8_t index);
+    void _initLidar(int index);
+    void _update_single_pipeline(void);
+    void _update_continuous(void);
     bool _isLidarReady(uint8_t index);
-    void _setLidarProfile(uint8_t index, Adafruit_VL53L0X::VL53L0X_Sense_config_t profile);
-    void _startContinuousRanging(uint8_t index);
-    void _stopContinuousRanging(uint8_t index);
     int _readLidar(uint8_t index);
 
     void _writeDac(uint8_t chan, int value);
