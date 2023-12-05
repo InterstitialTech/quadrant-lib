@@ -47,18 +47,19 @@ class Quadrant {
 
     void begin(void);
     void update(void);
-    void update_boxcar(void);
+    void initFilter(uint8_t len);
+    void updateFilter(void);
 
     // setters
     void setEngagementThreshold(int);
-    void setBoxcarLength(uint8_t len);
     void setLidarEnabled(int index, bool enabled);
 
     // getters
     float getSampleRate(void);
     bool isLidarEngaged(int index);
-    int getLidarDistance(int index);
+    uint16_t getLidarDistance(int index);
     float getLidarDistanceNormalized(int index);
+    float getLidarDistanceFiltered(int index);
     bool isElevationEngaged(void);
     float getElevation(void);
     bool isPitchEngaged(void);
@@ -87,21 +88,23 @@ class Quadrant {
 
     Adafruit_VL53L0X* _lidars[4];
 
-    int _distance[4];
-    int *_boxcar;
-    uint8_t _len_boxcar;
-    uint8_t _iboxcar;
+    uint16_t _distance[4];
     bool _engaged[4];
     bool _lidarEnabled[4];
     unsigned long _tlast, _tnow;
-    int _thresh;
+    uint16_t _thresh;
     enum Quadrant_SamplingMode _smode;
+
+    uint16_t *_filter;
+    uint8_t _len_filter;
+    uint8_t _ifilter;
+    bool _filter_enabled;
 
     void _initLidar(int index);
     void _update_single_pipeline(void);
     void _update_continuous(void);
     bool _isLidarReady(uint8_t index);
-    int _readLidar(uint8_t index);
+    uint16_t _readLidar(uint8_t index);
 
     void _writeDac(uint8_t chan, int value);
 

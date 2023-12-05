@@ -10,14 +10,14 @@ void Quadrant::begin(){
 
   // initialize private variables
   for (int i=0; i<4; i++) {
-    _distance[i] = 65536;
+    _distance[i] = 0xff;
     _engaged[i] = false;
     _lidarEnabled[i] = false;
   }
 
   _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
-  //_smode = QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE;
   _smode = QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED;
+  _filter_enabled = false;
 
   // LEDS
   for (int i=0; i<4; i++) {
@@ -90,51 +90,31 @@ void Quadrant::update(void) {
 }
 
 
-void Quadrant::update_boxcar(void) {
-
-  bool done[4];
-  int d;
+void Quadrant::updateFilter(void) {
 
   for (int i=0; i<4; i++) {
-    done[i] = !isLidarEnabled(i);
+    _filter[_ifilter*4 + i] = _distance[i];
   }
 
-  while (!(done[0] && done[1] && done[2] && done[3])) {
-    for (int i=0; i<4; i++) {
-      if (!done[i]) {
-        if (_isLidarReady(i)) {
-          d = _readLidar(i);
-          _boxcar[_iboxcar*4 + i] = d;
-          _engaged[i] = (d < _thresh);
-          d = 0;
-          for (int j=0; j<_len_boxcar; j++) {
-              d += _boxcar[j*4 + i];
-          }
-          _distance[i] = round(float(d) / _len_boxcar);
-          done[i] = true;
-        }
-      }
-    }
-  }
-
-  _iboxcar += 1;
-  if (_iboxcar >= _len_boxcar) _iboxcar = 0;
-
-  _tlast = _tnow;
-  _tnow = micros();
+  _ifilter += 1;
+  if (_ifilter >= _len_filter) _ifilter = 0;
 
 }
 
-void Quadrant::setBoxcarLength(uint8_t len) {
+void Quadrant::initFilter(uint8_t len) {
 
-    _boxcar = (int*) malloc(len * 4 * sizeof(int));
+  // simple boxcar filter
+  _filter = (uint16_t*) malloc(len * 4 * sizeof(uint16_t));
 
-    for (int i=0; i<(len*4); i++) {
-        _boxcar[i] = 65536;
-    }
+  for (int i=0; i<(len*4); i++) {
+      _filter[i] = 0xffff;
+  }
 
-    _len_boxcar = len;
-    _iboxcar = 0;
+  _len_filter = len;
+  _ifilter = 0;
+
+  _filter_enabled = true;
+
 }
 
 
@@ -152,7 +132,7 @@ bool Quadrant::isLidarEngaged(int index) {
 
 }
 
-int Quadrant::getLidarDistance(int index) {
+uint16_t Quadrant::getLidarDistance(int index) {
 
   // distance in mm
 
@@ -165,6 +145,18 @@ float Quadrant::getLidarDistanceNormalized(int index) {
   // unit-less distance normalized to the engagement threshold
 
   return float(_distance[index]) / _thresh;
+
+}
+
+float Quadrant::getLidarDistanceFiltered(int index) {
+
+  long tmp = 0;
+
+  for (int j=0; j<_len_filter; j++) {
+      tmp += _filter[j*4 + index];
+  }
+
+  return float(tmp) / _len_filter;
 
 }
 
@@ -183,7 +175,11 @@ float Quadrant::getElevation(void) {
 
   for (int i=0; i<4; i++) {
     if (isLidarEngaged(i)) {
-      total_distance += getLidarDistanceNormalized(i);      
+      if (_filter_enabled) {
+        total_distance += getLidarDistanceFiltered(i);      
+      } else {
+        total_distance += getLidarDistance(i);      
+      }
       count += 1;
     }
   }
@@ -191,7 +187,7 @@ float Quadrant::getElevation(void) {
   if (count == 0) {
     return 1.;
   } else {
-    return total_distance / count;
+    return total_distance / (count * _thresh);
   }
 
 }
@@ -206,7 +202,11 @@ float Quadrant::getPitch(void) {
 
   // returns a value between -1 and 1
 
+  if (_filter_enabled) {
+    return (getLidarDistanceFiltered(1) - getLidarDistanceFiltered(3)) / _thresh;
+  } else {
     return float(_distance[1] - _distance[3]) / _thresh;
+  }
 
 }
 
@@ -220,7 +220,11 @@ float Quadrant::getRoll(void) {
 
   // returns a value between -1 and 1
 
+  if (_filter_enabled) {
+    return (getLidarDistanceFiltered(0) - getLidarDistanceFiltered(2)) / _thresh;
+  } else {
     return float(_distance[0] - _distance[2]) / _thresh;
+  }
 
 }
 
@@ -234,7 +238,12 @@ float Quadrant::getArc(void) {
 
   // returns a value between -1 and 1
 
+  if (_filter_enabled) {
+    return (getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
+            + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3)) / _thresh;
+  } else {
     return float(_distance[0] - _distance[1] + _distance[2] - _distance[3]) / (2 * _thresh);
+  }
 
 }
 
@@ -251,19 +260,23 @@ void Quadrant::printReportToSerial(void) {
   StaticJsonDocument<512> report;
 
   JsonObject lidar0 = report.createNestedObject("lidar0");
-  lidar0["distance"] = getLidarDistance(0);
+  //lidar0["distance"] = getLidarDistance(0);
+  lidar0["distance"] = _round3(getLidarDistanceFiltered(0));
   lidar0["engaged"] = isLidarEngaged(0);
 
   JsonObject lidar1 = report.createNestedObject("lidar1");
-  lidar1["distance"] = getLidarDistance(1);
+  //lidar1["distance"] = getLidarDistance(1);
+  lidar1["distance"] = _round3(getLidarDistanceFiltered(1));
   lidar1["engaged"] = isLidarEngaged(1);
 
   JsonObject lidar2 = report.createNestedObject("lidar2");
-  lidar2["distance"] = getLidarDistance(2);
+  //lidar2["distance"] = getLidarDistance(2);
+  lidar2["distance"] = _round3(getLidarDistanceFiltered(2));
   lidar2["engaged"] = isLidarEngaged(2);
 
   JsonObject lidar3 = report.createNestedObject("lidar3");
-  lidar3["distance"] = getLidarDistance(3);
+  //lidar3["distance"] = getLidarDistance(3);
+  lidar3["distance"] = _round3(getLidarDistanceFiltered(3));
   lidar3["engaged"] = isLidarEngaged(3);
 
   JsonObject elevation = report.createNestedObject("elevation");
@@ -369,7 +382,7 @@ bool Quadrant::_isLidarReady(uint8_t index){
 
 }
 
-int Quadrant::_readLidar(uint8_t index){
+uint16_t Quadrant::_readLidar(uint8_t index){
 
   uint16_t d = 0xff;
 

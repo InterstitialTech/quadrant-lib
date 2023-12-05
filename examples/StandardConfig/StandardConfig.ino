@@ -37,6 +37,7 @@ void setup() {
   delay(100);
 
   quadrant.begin();
+  quadrant.initFilter(3);
 
 }
 
@@ -45,6 +46,7 @@ void loop() {
 
   // take lidar measurement and update state variables
   quadrant.update();
+  quadrant.updateFilter();
 
   // set indicator leds
   for (int i=0; i<4; i++) {
