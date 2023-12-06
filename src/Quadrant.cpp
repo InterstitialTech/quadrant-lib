@@ -203,9 +203,10 @@ float Quadrant::getPitch(void) {
   // returns a value between -1 and 1
 
   if (_filter_enabled) {
-    return (getLidarDistanceFiltered(1) - getLidarDistanceFiltered(3)) / _thresh;
+    return atan2(getLidarDistanceFiltered(1) - getLidarDistanceFiltered(3),
+                  QUADRANT_HEIGHT_MM) / (M_PI/2);
   } else {
-    return float(_distance[1] - _distance[3]) / _thresh;
+    return atan2(_distance[1] - _distance[3], QUADRANT_HEIGHT_MM) / (M_PI/2);
   }
 
 }
@@ -221,9 +222,10 @@ float Quadrant::getRoll(void) {
   // returns a value between -1 and 1
 
   if (_filter_enabled) {
-    return (getLidarDistanceFiltered(0) - getLidarDistanceFiltered(2)) / _thresh;
+    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(2),
+                  QUADRANT_WIDTH_MM) / (M_PI/2);
   } else {
-    return float(_distance[0] - _distance[2]) / _thresh;
+    return atan2(_distance[0] - _distance[2], QUADRANT_WIDTH_MM) / (M_PI/2);
   }
 
 }
@@ -239,10 +241,12 @@ float Quadrant::getArc(void) {
   // returns a value between -1 and 1
 
   if (_filter_enabled) {
-    return (getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
-            + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3)) / _thresh;
+    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
+                  + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3),
+                  QUADRANT_HEIGHT_MM/2.) / (M_PI/2);
   } else {
-    return float(_distance[0] - _distance[1] + _distance[2] - _distance[3]) / (2 * _thresh);
+    return atan2(_distance[0] - _distance[1] + _distance[2] - _distance[3],
+                  QUADRANT_HEIGHT_MM/2.) / (M_PI/2);
   }
 
 }
