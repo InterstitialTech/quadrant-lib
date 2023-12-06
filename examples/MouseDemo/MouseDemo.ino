@@ -27,6 +27,7 @@ Quadrant quadrant;
 void setup() {
 
   quadrant.begin();
+  quadrant.calibrateOffsets();
   Mouse.begin();
 
 }

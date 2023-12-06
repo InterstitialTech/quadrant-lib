@@ -52,6 +52,7 @@ class Quadrant {
     void update(void);
     void initFilter(uint8_t len);
     void updateFilter(void);
+    void calibrateOffsets(void);
 
     // setters
     void setEngagementThreshold(int);
@@ -92,6 +93,7 @@ class Quadrant {
     Adafruit_VL53L0X* _lidars[4];
 
     uint16_t _distance[4];
+    uint16_t _offset[4];
     bool _engaged[4];
     bool _lidarEnabled[4];
     unsigned long _tlast, _tnow;

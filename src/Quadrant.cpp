@@ -11,6 +11,7 @@ void Quadrant::begin(){
   // initialize private variables
   for (int i=0; i<4; i++) {
     _distance[i] = 0xff;
+    _offset[i] = 0;
     _engaged[i] = false;
     _lidarEnabled[i] = false;
   }
@@ -89,6 +90,27 @@ void Quadrant::update(void) {
 
 }
 
+void Quadrant::calibrateOffsets(void) {
+
+  uint16_t min = 0xffff;
+
+  update();
+
+  if (!isElevationEngaged()) {
+    return;
+  }
+
+  for (int i=0; i<4; i++) {
+    if (_distance[i] < min) {
+      min = _distance[i];
+    }
+  }
+
+  for (int i=0; i<4; i++) {
+    _offset[i] = _distance[i] - min;
+  }
+
+}
 
 void Quadrant::updateFilter(void) {
 
@@ -243,10 +265,10 @@ float Quadrant::getArc(void) {
   if (_filter_enabled) {
     return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
                   + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3),
-                  QUADRANT_HEIGHT_MM/2.) / (M_PI/2);
+                  QUADRANT_HEIGHT_MM) / (M_PI/2);
   } else {
     return atan2(_distance[0] - _distance[1] + _distance[2] - _distance[3],
-                  QUADRANT_HEIGHT_MM/2.) / (M_PI/2);
+                  QUADRANT_HEIGHT_MM) / (M_PI/2);
   }
 
 }
@@ -428,7 +450,7 @@ void Quadrant::_update_single_pipeline(void) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         if (_lidars[i]->isRangeComplete()) {
-          _distance[i] = _lidars[i]->readRangeResult();  // modified lib
+          _distance[i] = _lidars[i]->readRangeResult() - _offset[i];  // modified lib
           _engaged[i] = (_distance[i] < _thresh);
           done[i] = true;
         }
@@ -453,7 +475,7 @@ void Quadrant::_update_continuous(void) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
-          _distance[i] = _readLidar(i);
+          _distance[i] = _readLidar(i) - _offset[i];
           _engaged[i] = (_distance[i] < _thresh);
           done[i] = true;
         }

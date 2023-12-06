@@ -21,6 +21,7 @@ bool wasEngaged[4] = {false};
 void setup() {
 
   quadrant.begin();
+  quadrant.calibrateOffsets();
   Serial.begin(115200);
 
 }

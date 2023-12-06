@@ -37,6 +37,7 @@ void setup() {
   delay(100);
 
   quadrant.begin();
+  quadrant.calibrateOffsets();
   quadrant.initFilter(3);
 
 }
