@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # set your Arduino user path here
-ARDUINO_USER_DIR=$HOME/Arduino
+ARDUINO_USER_DIR=$(arduino-cli config dump | grep user | awk '{print $2}')
 
 TARGET_DIR=$ARDUINO_USER_DIR/libraries/Interstitial_Quadrant
 if [[ $* == *-f* ]]; then
