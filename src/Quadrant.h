@@ -8,7 +8,7 @@
 #define Quadrant_h
 
 #include "Arduino.h"
-#include "Adafruit_VL53L0X.h"
+#include <VL53L0X.h>
 #include <MIDI.h>
 
 #define LED0_PIN 0
@@ -35,6 +35,8 @@
 
 #define QUADRANT_HEIGHT_MM 65
 #define QUADRANT_WIDTH_MM 45
+
+#define QUADRANT_TIMEOUT_MS 1000
 
 enum Quadrant_SamplingMode {
   QUADRANT_SAMPLINGMODE_SINGLE_SEQUENTIAL,
@@ -90,7 +92,7 @@ class Quadrant {
     const uint8_t _lidarAddrs[4] = {LIDAR0_ADDR, LIDAR1_ADDR, LIDAR2_ADDR, LIDAR3_ADDR};
     const uint8_t _dacAddrs[4] = {DAC0_ADDR, DAC1_ADDR, DAC2_ADDR, DAC3_ADDR};
 
-    Adafruit_VL53L0X* _lidars[4];
+    VL53L0X* _lidars[4];
 
     uint16_t _distance[4];
     uint16_t _offset[4];
@@ -106,8 +108,9 @@ class Quadrant {
     bool _filter_enabled;
 
     void _initLidar(int index);
-    void _update_single_pipeline(void);
-    void _update_continuous(void);
+    void _update_single_sequential(void);
+    void _update_continuous_sequential(void);
+    void _update_continuous_round_robin(void);
     bool _isLidarReady(uint8_t index);
     uint16_t _readLidar(uint8_t index);
 

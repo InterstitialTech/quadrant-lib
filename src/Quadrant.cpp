@@ -8,6 +8,8 @@ MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
 void Quadrant::begin(){
 
+  Wire.begin();
+
   // initialize private variables
   for (int i=0; i<4; i++) {
     _distance[i] = 0xff;
@@ -17,7 +19,7 @@ void Quadrant::begin(){
   }
 
   _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
-  _smode = QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE;
+  _smode = QUADRANT_SAMPLINGMODE_CONTINUOUS;
   _filter_enabled = false;
 
   // LEDS
@@ -44,7 +46,6 @@ void Quadrant::begin(){
   // MIDI
   softSerial.setInverted(true,true);
   QMIDI.begin();
-
 
   // sample timer
   _tlast = micros();
@@ -74,19 +75,22 @@ void Quadrant::update(void) {
 
   switch (_smode) {
     case QUADRANT_SAMPLINGMODE_SINGLE_SEQUENTIAL:
+      _update_single_sequential();
       break;
     case QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE:
-      _update_single_pipeline();
       break;
     case QUADRANT_SAMPLINGMODE_CONTINUOUS:
-      _update_continuous();
+      _update_continuous_sequential();
+      //_update_continuous_round_robin(); // doesn't seem to make a difference?
       break;
     case QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED:
-      _update_continuous();
       break;
     default:
       break;
   }
+
+  _tlast = _tnow;
+  _tnow = micros();
 
 }
 
@@ -286,24 +290,28 @@ void Quadrant::printReportToSerial(void) {
   StaticJsonDocument<512> report;
 
   JsonObject lidar0 = report.createNestedObject("lidar0");
-  //lidar0["distance"] = getLidarDistance(0);
-  lidar0["distance"] = _round3(getLidarDistanceFiltered(0));
   lidar0["engaged"] = isLidarEngaged(0);
 
   JsonObject lidar1 = report.createNestedObject("lidar1");
-  //lidar1["distance"] = getLidarDistance(1);
-  lidar1["distance"] = _round3(getLidarDistanceFiltered(1));
   lidar1["engaged"] = isLidarEngaged(1);
 
   JsonObject lidar2 = report.createNestedObject("lidar2");
-  //lidar2["distance"] = getLidarDistance(2);
-  lidar2["distance"] = _round3(getLidarDistanceFiltered(2));
   lidar2["engaged"] = isLidarEngaged(2);
 
   JsonObject lidar3 = report.createNestedObject("lidar3");
-  //lidar3["distance"] = getLidarDistance(3);
-  lidar3["distance"] = _round3(getLidarDistanceFiltered(3));
   lidar3["engaged"] = isLidarEngaged(3);
+
+  if (_filter_enabled) {
+    lidar0["distance"] = _round3(getLidarDistanceFiltered(0));
+    lidar1["distance"] = _round3(getLidarDistanceFiltered(1));
+    lidar2["distance"] = _round3(getLidarDistanceFiltered(2));
+    lidar3["distance"] = _round3(getLidarDistanceFiltered(3));
+  } else {
+    lidar0["distance"] = getLidarDistance(0);
+    lidar1["distance"] = getLidarDistance(1);
+    lidar2["distance"] = getLidarDistance(2);
+    lidar3["distance"] = getLidarDistance(3);
+  }
 
   JsonObject elevation = report.createNestedObject("elevation");
   elevation["value"] = _round3(getElevation());
@@ -371,40 +379,32 @@ void Quadrant::_initLidar(int index) {
     digitalWrite(_lidarPins[index], HIGH);
     delay(100);
 
-    _lidars[index] = new Adafruit_VL53L0X();
-
-    if(!_lidars[index]->begin(_lidarAddrs[index])) {
-      Serial.print(F("Failed to boot VL53L0X "));
+    _lidars[index] = new VL53L0X();
+    _lidars[index]->setTimeout(QUADRANT_TIMEOUT_MS);
+    if(!_lidars[index]->init()) {
+      Serial.print(F("Failed to boot VL53L0X #"));
       Serial.println(index);
     }
-
-    _lidars[index]->configSensor(Adafruit_VL53L0X::VL53L0X_SENSE_HIGH_SPEED);
+    _lidars[index]->setMeasurementTimingBudget(24000);
+    _lidars[index]->setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 12);
+    _lidars[index]->setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 8);
+    _lidars[index]->setAddress(_lidarAddrs[index]);
 
     setLidarEnabled(index, true);
 
     if ((_smode == QUADRANT_SAMPLINGMODE_CONTINUOUS)
           || (_smode == QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED)) {
 
-      _lidars[index]->startRangeContinuous(10);
+      _lidars[index]->startContinuous();
 
     }
-
     digitalWrite(_ledPins[index], LOW);
 
 }
 
 bool Quadrant::_isLidarReady(uint8_t index){
 
-  bool complete;
-
-  complete = _lidars[index]->isRangeComplete();
-
-  if (_lidars[index]->Status != VL53L0X_ERROR_NONE) {
-    Serial.println("isRangeComplete failed");
-    return false;
-  }
-
-  return complete;
+  return (_lidars[index]->readReg(VL53L0X::RESULT_INTERRUPT_STATUS) & 0x07);
 
 }
 
@@ -412,11 +412,12 @@ uint16_t Quadrant::_readLidar(uint8_t index){
 
   uint16_t d = 0xff;
 
-  d = _lidars[index]->readRangeResult();
+  // assumptions: Linearity Corrective Gain is 1000 (default);
+  // fractional ranging is not enabled
 
-  if (_lidars[index]->Status != VL53L0X_ERROR_NONE) {
-    Serial.println("readRangeResult failed");
-  }
+  d = _lidars[index]->readReg16Bit(VL53L0X::RESULT_RANGE_STATUS + 10);
+
+  _lidars[index]->writeReg(VL53L0X::SYSTEM_INTERRUPT_CLEAR, 0x01);
 
   return d;
 
@@ -436,34 +437,45 @@ void Quadrant::_writeDac(uint8_t chan, int value){
 
 }
 
-void Quadrant::_update_single_pipeline(void) {
+void Quadrant::_update_single_sequential(void) {
 
-  bool done[4] = {false, false, false, false};
+  uint16_t d;
 
-  // start all measuring at once
   for (int i=0; i<4; i++) {
-    _lidars[i]->startMeasurement();
-  }
-
-  // poll in a loop, settings flags as readouts return
-  while (!(done[0] && done[1] && done[2] && done[3])) {
-    for (int i=0; i<4; i++) {
-      if (!done[i]) {
-        if (_lidars[i]->isRangeComplete()) {
-          _distance[i] = _lidars[i]->readRangeResult() - _offset[i];  // modified lib
-          _engaged[i] = (_distance[i] < _thresh);
-          done[i] = true;
-        }
+    if (isLidarEnabled(i)) {
+      d = _lidars[i]->readRangeSingleMillimeters() - _offset[i];
+      if (_lidars[i]->timeoutOccurred()) {
+        Serial.println("timeout occurred!");
+        continue;
       }
+      _distance[i] = d - _offset[i];
+      _engaged[i] = (_distance[i] < _thresh);
     }
   }
 
-  _tlast = _tnow;
-  _tnow = micros();
+}
+
+void Quadrant::_update_continuous_sequential(void) {
+
+  uint16_t d;
+
+  for (int i=0; i<4; i++) {
+    if (isLidarEnabled(i)) {
+      d = _lidars[i]->readRangeContinuousMillimeters() - _offset[i];
+      if (_lidars[i]->timeoutOccurred()) {
+        Serial.println("timeout occurred!");
+        continue;
+      }
+      _distance[i] = d - _offset[i];
+      _engaged[i] = (_distance[i] < _thresh);
+    }
+  }
 
 }
 
-void Quadrant::_update_continuous(void) {
+void Quadrant::_update_continuous_round_robin(void) {
+
+  // note: no timeout checking here
 
   bool done[4];
 
@@ -482,9 +494,6 @@ void Quadrant::_update_continuous(void) {
       }
     }
   }
-
-  _tlast = _tnow;
-  _tnow = micros();
 
 }
 

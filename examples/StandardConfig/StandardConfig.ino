@@ -19,6 +19,9 @@
   The lidar values, the sample rate, and aggregate parameters are all
   printed to USB serial in JSON format.
 
+  The board sample rate is around 60 Hz, so to throttle the output, we
+  introduce OUTPUT_PERIOD_MS. Feel free to adjust this for your use case.
+
 */
 
 #define CV_GAIN_ELEVATION 1.0
@@ -26,10 +29,13 @@
 #define CV_GAIN_ROLL   4.0
 #define CV_GAIN_ARC    10.0
 
+#define OUTPUT_PERIOD_MS 30
+
 #include "Quadrant.h"
 
 Quadrant quadrant;
 
+unsigned long tnow, tlast;
 
 void setup() {
 
@@ -38,7 +44,10 @@ void setup() {
 
   quadrant.begin();
   quadrant.calibrateOffsets();
-  quadrant.initFilter(3);
+  quadrant.initFilter(6);
+
+  tlast = millis();
+  tnow = millis();
 
 }
 
@@ -58,28 +67,37 @@ void loop() {
     }
   }
 
-  // elevation to CV 0
-  if (quadrant.isElevationEngaged()) {
-    quadrant.setCV(0, quadrant.getElevation() * 5.0 * CV_GAIN_ELEVATION);
-  }
+  tnow = millis();
 
-  // pitch to CV 1
-  if (quadrant.isPitchEngaged()) {
-    quadrant.setCV(1, 2.5 + quadrant.getPitch() * 2.5 * CV_GAIN_PITCH);
-  }
+  if ((tnow - tlast) >= OUTPUT_PERIOD_MS) {
 
-  // roll to CV 2
-  if (quadrant.isRollEngaged()) {
-    quadrant.setCV(2, 2.5 + quadrant.getRoll() * 2.5 * CV_GAIN_ROLL);
-  }
+    // elevation to CV 0
+    if (quadrant.isElevationEngaged()) {
+      quadrant.setCV(0, quadrant.getElevation() * 5.0 * CV_GAIN_ELEVATION);
+    }
 
-  // arc to CV 3
-  if (quadrant.isArcEngaged()) {
-    quadrant.setCV(3, 2.5 + quadrant.getArc() * 2.5 * CV_GAIN_ARC);
-  }
+    // pitch to CV 1
+    if (quadrant.isPitchEngaged()) {
+      quadrant.setCV(1, 2.5 + quadrant.getPitch() * 2.5 * CV_GAIN_PITCH);
+    }
 
-  // print status report to USB serial
-  quadrant.printReportToSerial();
+    // roll to CV 2
+    if (quadrant.isRollEngaged()) {
+      quadrant.setCV(2, 2.5 + quadrant.getRoll() * 2.5 * CV_GAIN_ROLL);
+    }
+
+    // arc to CV 3
+    if (quadrant.isArcEngaged()) {
+      quadrant.setCV(3, 2.5 + quadrant.getArc() * 2.5 * CV_GAIN_ARC);
+    }
+
+    // print status report to USB serial
+    quadrant.printReportToSerial();
+    Serial.flush();
+
+    tlast = tnow;
+
+  }
 
 }
 
