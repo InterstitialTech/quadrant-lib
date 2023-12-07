@@ -10,6 +10,7 @@
 #include "Arduino.h"
 #include <VL53L0X.h>
 #include <MIDI.h>
+#include <ArduinoJson.h>
 
 #define LED0_PIN 0
 #define LED1_PIN 23
@@ -106,6 +107,8 @@ class Quadrant {
     uint8_t _len_filter;
     uint8_t _ifilter;
     bool _filter_enabled;
+
+    StaticJsonDocument<512> *_report;
 
     void _initLidar(int index);
     void _update_single_sequential(void);

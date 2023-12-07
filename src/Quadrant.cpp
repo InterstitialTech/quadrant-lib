@@ -1,6 +1,5 @@
 #include "Quadrant.h"
 #include <Wire.h>
-#include <ArduinoJson.h>
 
 SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
@@ -47,8 +46,10 @@ void Quadrant::begin(){
   softSerial.setInverted(true,true);
   QMIDI.begin();
 
+  // init JSON report
+  _report = new StaticJsonDocument<512>;;
+
   // sample timer
-  _tlast = micros();
   _tnow = micros();
 
 }
@@ -287,18 +288,18 @@ double _round3(double value) {
 
 void Quadrant::printReportToSerial(void) {
 
-  StaticJsonDocument<512> report;
+  _report->clear();
 
-  JsonObject lidar0 = report.createNestedObject("lidar0");
+  JsonObject lidar0 = _report->createNestedObject("lidar0");
   lidar0["engaged"] = isLidarEngaged(0);
 
-  JsonObject lidar1 = report.createNestedObject("lidar1");
+  JsonObject lidar1 = _report->createNestedObject("lidar1");
   lidar1["engaged"] = isLidarEngaged(1);
 
-  JsonObject lidar2 = report.createNestedObject("lidar2");
+  JsonObject lidar2 = _report->createNestedObject("lidar2");
   lidar2["engaged"] = isLidarEngaged(2);
 
-  JsonObject lidar3 = report.createNestedObject("lidar3");
+  JsonObject lidar3 = _report->createNestedObject("lidar3");
   lidar3["engaged"] = isLidarEngaged(3);
 
   if (_filter_enabled) {
@@ -313,25 +314,25 @@ void Quadrant::printReportToSerial(void) {
     lidar3["distance"] = getLidarDistance(3);
   }
 
-  JsonObject elevation = report.createNestedObject("elevation");
+  JsonObject elevation = _report->createNestedObject("elevation");
   elevation["value"] = _round3(getElevation());
   elevation["engaged"] = isElevationEngaged();
 
-  JsonObject pitch = report.createNestedObject("pitch");
+  JsonObject pitch = _report->createNestedObject("pitch");
   pitch["value"] = _round3(getPitch());
   pitch["engaged"] = isPitchEngaged();
 
-  JsonObject roll = report.createNestedObject("roll");
+  JsonObject roll = _report->createNestedObject("roll");
   roll["value"] = _round3(getRoll());
   roll["engaged"] = isRollEngaged();
 
-  JsonObject arc = report.createNestedObject("arc");
+  JsonObject arc = _report->createNestedObject("arc");
   arc["value"] = _round3(getArc());
   arc["engaged"] = isArcEngaged();
 
-  report["sampleRate"] = _round3(getSampleRate());
+  (*_report)["sampleRate"] = _round3(getSampleRate());
 
-  serializeJson(report, Serial);
+  serializeJson(*_report, Serial);
   Serial.println();
 
 }
