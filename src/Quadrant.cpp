@@ -42,6 +42,12 @@ void Quadrant::begin(){
   Wire1.setSCL(7);
   Wire1.begin();
 
+  // gate pins
+  for (int i=0; i<4; i++) {
+    pinMode(_gatePins[i], OUTPUT); 
+    digitalWrite(_gatePins[i], LOW);
+  }
+
   // MIDI
   softSerial.setInverted(true,true);
   QMIDI.begin();
@@ -350,6 +356,12 @@ void Quadrant::setCV(int chan, float voltage) {
   voltage = constrain(voltage, 0.0, 5.0);
 
   _writeDac(chan, voltage * 1023 / 5);
+
+}
+
+void Quadrant::setGate(int index, int state) {
+
+  digitalWrite(_gatePins[index], state);
 
 }
 

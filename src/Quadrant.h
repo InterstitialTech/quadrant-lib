@@ -32,6 +32,11 @@
 #define DAC2_ADDR 0x12
 #define DAC3_ADDR 0x10
 
+#define GATE0_PIN 2
+#define GATE1_PIN 25
+#define GATE2_PIN 20
+#define GATE3_PIN 14
+
 #define DEFAULT_ENGAGEMENT_THRESHOLD 300
 
 #define QUADRANT_HEIGHT_MM 65
@@ -82,6 +87,7 @@ class Quadrant {
     // outputs
     void setLed(int index, int state);
     void setCV(int chan, float voltage);
+    void setGate(int index, int state);
     void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
     void sendMidiNoteOff(uint8_t, uint8_t);
     void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
@@ -92,6 +98,7 @@ class Quadrant {
     const uint8_t _lidarPins[4]={LIDAR0_ENABLE, LIDAR1_ENABLE, LIDAR2_ENABLE, LIDAR3_ENABLE};
     const uint8_t _lidarAddrs[4] = {LIDAR0_ADDR, LIDAR1_ADDR, LIDAR2_ADDR, LIDAR3_ADDR};
     const uint8_t _dacAddrs[4] = {DAC0_ADDR, DAC1_ADDR, DAC2_ADDR, DAC3_ADDR};
+    const uint8_t _gatePins[4] = {GATE0_PIN, GATE1_PIN, GATE2_PIN, GATE3_PIN};
 
     VL53L0X* _lidars[4];
 
