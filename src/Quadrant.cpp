@@ -1,11 +1,13 @@
-#include "Quadrant.h"
 #include <Wire.h>
+
+#include "Quadrant.h"
+#include "QuadrantCommon.h"
 
 SerialPIO softSerial(11, SerialPIO::NOPIN);
 MIDI_NAMESPACE::SerialMIDI<SerialPIO> softSerialMidi(softSerial);
 MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
-void Quadrant::begin(){
+void Quadrant::begin(void){
 
   Wire.setClock(400000);
   Wire.begin();
@@ -13,14 +15,12 @@ void Quadrant::begin(){
   // initialize private variables
   for (int i=0; i<4; i++) {
     _distance[i] = 0xff;
-    _offset[i] = 0;
     _engaged[i] = false;
     _lidarEnabled[i] = false;
   }
 
-  _thresh = DEFAULT_ENGAGEMENT_THRESHOLD;
+  _thresh = QUADRANT_THRESH_DEFAULT_MM;
   _smode = QUADRANT_SAMPLINGMODE_CONTINUOUS;
-  _filter_enabled = false;
 
   // LEDS
   for (int i=0; i<4; i++) {
@@ -56,9 +56,6 @@ void Quadrant::begin(){
   // init JSON report
   _report = new StaticJsonDocument<512>;;
 
-  // sample timer
-  _tnow = micros();
-
 }
 
 void Quadrant::setLidarEnabled(int index, bool enabled) {
@@ -73,9 +70,9 @@ bool Quadrant::isLidarEnabled(int index) {
 
 }
 
-void Quadrant::setEngagementThreshold(int value) {
+void Quadrant::setEngagementThreshold(uint16_t thresh_mm) {
 
-  _thresh = value;
+  _thresh = thresh_mm;
 
 }
 
@@ -96,68 +93,17 @@ void Quadrant::update(void) {
       break;
   }
 
-  _tlast = _tnow;
-  _tnow = micros();
-
 }
 
-void Quadrant::calibrateOffsets(void) {
+void Quadrant::pushFrameMulticore(void) {
 
-  uint16_t min = 0xffff;
-
-  update();
-
-  if (!isElevationEngaged()) {
-    return;
-  }
-
-  for (int i=0; i<4; i++) {
-    if (_distance[i] < min) {
-      min = _distance[i];
+    for (int i=0; i<4; i++) {
+      rp2040.fifo.push_nb(getLidarDistance(i));
     }
-  }
-
-  for (int i=0; i<4; i++) {
-    _offset[i] = _distance[i] - min;
-  }
 
 }
-
-void Quadrant::updateFilter(void) {
-
-  for (int i=0; i<4; i++) {
-    _filter[_ifilter*4 + i] = _distance[i];
-  }
-
-  _ifilter += 1;
-  if (_ifilter >= _len_filter) _ifilter = 0;
-
-}
-
-void Quadrant::initFilter(uint8_t len) {
-
-  // simple boxcar filter
-  _filter = (uint16_t*) malloc(len * 4 * sizeof(uint16_t));
-
-  for (int i=0; i<(len*4); i++) {
-      _filter[i] = 0xffff;
-  }
-
-  _len_filter = len;
-  _ifilter = 0;
-
-  _filter_enabled = true;
-
-}
-
 
 // getters
-
-float Quadrant::getSampleRate(void) {
-
-  return 1e6 / float(_tnow - _tlast);
-
-}
 
 bool Quadrant::isLidarEngaged(int index) {
 
@@ -173,124 +119,7 @@ uint16_t Quadrant::getLidarDistance(int index) {
 
 }
 
-float Quadrant::getLidarDistanceNormalized(int index) {
-
-  // unit-less distance normalized to the engagement threshold
-
-  return float(_distance[index]) / _thresh;
-
-}
-
-float Quadrant::getLidarDistanceFiltered(int index) {
-
-  long tmp = 0;
-
-  for (int j=0; j<_len_filter; j++) {
-      tmp += _filter[j*4 + index];
-  }
-
-  return float(tmp) / _len_filter;
-
-}
-
-bool Quadrant::isElevationEngaged(void) {
-
-  return _engaged[0] && _engaged[1] && _engaged[2] && _engaged[3];
-
-}
-
-float Quadrant::getElevation(void) {
-
-  // returns a value between 0 and 1
-
-  int count = 0;
-  float total_distance = 0;
-
-  for (int i=0; i<4; i++) {
-    if (isLidarEngaged(i)) {
-      if (_filter_enabled) {
-        total_distance += getLidarDistanceFiltered(i);      
-      } else {
-        total_distance += getLidarDistance(i);      
-      }
-      count += 1;
-    }
-  }
-
-  if (count == 0) {
-    return 1.;
-  } else {
-    return total_distance / (count * _thresh);
-  }
-
-}
-
-bool Quadrant::isPitchEngaged(void) {
-
-  return _engaged[1] && _engaged[3];
-
-}
-
-float Quadrant::getPitch(void) {
-
-  // returns a value between -1 and 1
-
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(1) - getLidarDistanceFiltered(3),
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[1] - _distance[3], QUADRANT_HEIGHT_MM) / (M_PI/2);
-  }
-
-}
-
-bool Quadrant::isRollEngaged(void) {
-
-  return _engaged[0] && _engaged[2];
-
-}
-
-float Quadrant::getRoll(void) {
-
-  // returns a value between -1 and 1
-
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(2),
-                  QUADRANT_WIDTH_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[0] - _distance[2], QUADRANT_WIDTH_MM) / (M_PI/2);
-  }
-
-}
-
-bool Quadrant::isArcEngaged(void) {
-
-  return _engaged[0] && _engaged[1] && _engaged[2] && _engaged[3];
-
-}
-
-float Quadrant::getArc(void) {
-
-  // returns a value between -1 and 1
-
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
-                  + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3),
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[0] - _distance[1] + _distance[2] - _distance[3],
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
-  }
-
-}
-
-double _round3(double value) {
-
-    // convenience function for limiting sig figs in json serialization
-
-   return (int)(value * 1000 + 0.5) / 1000.0;
-
-}
+// outputs
 
 void Quadrant::printReportToSerial(void) {
 
@@ -298,28 +127,21 @@ void Quadrant::printReportToSerial(void) {
 
   JsonObject lidar0 = _report->createNestedObject("lidar0");
   lidar0["engaged"] = isLidarEngaged(0);
+  lidar0["distance"] = getLidarDistance(0);
 
   JsonObject lidar1 = _report->createNestedObject("lidar1");
   lidar1["engaged"] = isLidarEngaged(1);
+  lidar1["distance"] = getLidarDistance(1);
 
   JsonObject lidar2 = _report->createNestedObject("lidar2");
   lidar2["engaged"] = isLidarEngaged(2);
+  lidar2["distance"] = getLidarDistance(2);
 
   JsonObject lidar3 = _report->createNestedObject("lidar3");
   lidar3["engaged"] = isLidarEngaged(3);
+  lidar3["distance"] = getLidarDistance(3);
 
-  if (_filter_enabled) {
-    lidar0["distance"] = _round3(getLidarDistanceFiltered(0));
-    lidar1["distance"] = _round3(getLidarDistanceFiltered(1));
-    lidar2["distance"] = _round3(getLidarDistanceFiltered(2));
-    lidar3["distance"] = _round3(getLidarDistanceFiltered(3));
-  } else {
-    lidar0["distance"] = getLidarDistance(0);
-    lidar1["distance"] = getLidarDistance(1);
-    lidar2["distance"] = getLidarDistance(2);
-    lidar3["distance"] = getLidarDistance(3);
-  }
-
+  /*
   JsonObject elevation = _report->createNestedObject("elevation");
   elevation["value"] = _round3(getElevation());
   elevation["engaged"] = isElevationEngaged();
@@ -335,15 +157,12 @@ void Quadrant::printReportToSerial(void) {
   JsonObject arc = _report->createNestedObject("arc");
   arc["value"] = _round3(getArc());
   arc["engaged"] = isArcEngaged();
-
-  (*_report)["sampleRate"] = _round3(getSampleRate());
+  */
 
   serializeJson(*_report, Serial);
   Serial.println();
 
 }
-
-// outputs
 
 void Quadrant::setLed(int index, int state) {
 
@@ -456,12 +275,12 @@ void Quadrant::_update_single_sequential(void) {
 
   for (int i=0; i<4; i++) {
     if (isLidarEnabled(i)) {
-      d = _lidars[i]->readRangeSingleMillimeters() - _offset[i];
+      d = _lidars[i]->readRangeSingleMillimeters();
       if (_lidars[i]->timeoutOccurred()) {
         Serial.println("timeout occurred!");
         continue;
       }
-      _distance[i] = d - _offset[i];
+      _distance[i] = d;
       _engaged[i] = (_distance[i] < _thresh);
     }
   }
@@ -474,12 +293,12 @@ void Quadrant::_update_continuous_sequential(void) {
 
   for (int i=0; i<4; i++) {
     if (isLidarEnabled(i)) {
-      d = _lidars[i]->readRangeContinuousMillimeters() - _offset[i];
+      d = _lidars[i]->readRangeContinuousMillimeters();
       if (_lidars[i]->timeoutOccurred()) {
         Serial.println("timeout occurred!");
         continue;
       }
-      _distance[i] = d - _offset[i];
+      _distance[i] = d;
       _engaged[i] = (_distance[i] < _thresh);
     }
   }
@@ -500,13 +319,21 @@ void Quadrant::_update_continuous_round_robin(void) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
-          _distance[i] = _readLidar(i) - _offset[i];
+          _distance[i] = _readLidar(i);
           _engaged[i] = (_distance[i] < _thresh);
           done[i] = true;
         }
       }
     }
   }
+
+}
+
+double _round3(double value) {
+
+    // convenience function for limiting sig figs in json serialization
+
+   return (int)(value * 1000 + 0.5) / 1000.0;
 
 }
 

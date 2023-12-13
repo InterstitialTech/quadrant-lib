@@ -12,6 +12,8 @@
 #include <MIDI.h>
 #include <ArduinoJson.h>
 
+#include "QuadrantDSP.h"
+
 #define LED0_PIN 0
 #define LED1_PIN 23
 #define LED2_PIN 18
@@ -37,12 +39,8 @@
 #define GATE2_PIN 20
 #define GATE3_PIN 14
 
-#define DEFAULT_ENGAGEMENT_THRESHOLD 500
-
-#define QUADRANT_HEIGHT_MM 65
-#define QUADRANT_WIDTH_MM 45
-
 #define QUADRANT_TIMEOUT_MS 1000
+
 
 enum Quadrant_SamplingMode {
   QUADRANT_SAMPLINGMODE_SINGLE_SEQUENTIAL,
@@ -58,31 +56,19 @@ class Quadrant {
 
     void begin(void);
     void update(void);
-    void initFilter(uint8_t len);
-    void updateFilter(void);
-    void calibrateOffsets(void);
+    void pushFrameMulticore(void);
 
     // setters
-    void setEngagementThreshold(int);
+    void setEngagementThreshold(uint16_t thresh_mm);
     void setLidarEnabled(int index, bool enabled);
 
     // getters
-    float getSampleRate(void);
     bool isLidarEngaged(int index);
     uint16_t getLidarDistance(int index);
-    float getLidarDistanceNormalized(int index);
-    float getLidarDistanceFiltered(int index);
-    bool isElevationEngaged(void);
-    float getElevation(void);
-    bool isPitchEngaged(void);
-    float getPitch(void);
-    bool isRollEngaged(void);
-    float getRoll(void);
-    bool isArcEngaged(void);
-    float getArc(void);
     bool isLidarEnabled(int index);
 
-    void printReportToSerial(void);
+    // DSP
+    QuadrantDSP dsp;
 
     // outputs
     void setLed(int index, int state);
@@ -91,6 +77,7 @@ class Quadrant {
     void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
     void sendMidiNoteOff(uint8_t, uint8_t);
     void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
+    void printReportToSerial(void);
 
   private:
 
@@ -103,19 +90,10 @@ class Quadrant {
     VL53L0X* _lidars[4];
 
     uint16_t _distance[4];
-    uint16_t _offset[4];
     bool _engaged[4];
     bool _lidarEnabled[4];
-    unsigned long _tlast, _tnow;
     uint16_t _thresh;
     enum Quadrant_SamplingMode _smode;
-
-    uint16_t *_filter;
-    uint8_t _len_filter;
-    uint8_t _ifilter;
-    bool _filter_enabled;
-
-    StaticJsonDocument<512> *_report;
 
     void _initLidar(int index);
     void _update_single_sequential(void);
@@ -124,7 +102,10 @@ class Quadrant {
     bool _isLidarReady(uint8_t index);
     uint16_t _readLidar(uint8_t index);
 
+    // output
+    StaticJsonDocument<512> *_report;
     void _writeDac(uint8_t chan, int value);
+    double _round3(double value);
 
 };
 
