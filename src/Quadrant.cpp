@@ -7,6 +7,7 @@ MIDI_CREATE_INSTANCE(SerialPIO, softSerialMidi, QMIDI)
 
 void Quadrant::begin(){
 
+  Wire.setClock(400000);
   Wire.begin();
 
   // initialize private variables
