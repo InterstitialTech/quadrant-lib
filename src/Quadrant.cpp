@@ -87,8 +87,7 @@ void Quadrant::update(void) {
     case QUADRANT_SAMPLINGMODE_SINGLE_PIPELINE:
       break;
     case QUADRANT_SAMPLINGMODE_CONTINUOUS:
-      _update_continuous_sequential();
-      //_update_continuous_round_robin(); // doesn't seem to make a difference?
+      _update_continuous_round_robin();
       break;
     case QUADRANT_SAMPLINGMODE_CONTINUOUS_TIMED:
       break;
