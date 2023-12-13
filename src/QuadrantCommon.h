@@ -1,6 +1,8 @@
 #ifndef QuadrantCommon_h
 #define QuadrantCommon_h
 
+#include "Arduino.h"
+
 #define QUADRANT_LIDAR0_ENABLE 1
 #define QUADRANT_LIDAR1_ENABLE 24
 #define QUADRANT_LIDAR2_ENABLE 19

@@ -1,17 +1,19 @@
 #ifndef QuadrantDSP_h
 #define QuadrantDSP_h
 
+#include "QuadrantCommon.h"
 
 class QuadrantDSP {
 
   public:
     void begin(void);
     void update(uint16_t *frame);
-    void popFrameMulticore(uint16_t *frame);
+    void popFrame(uint16_t *frame);
     void initFilter(uint8_t len);
     void updateFilter(void);
     void calibrateOffsets(void);
     float getLidarDistanceFiltered(int index);
+    bool isLidarEngaged(int index);
     bool isElevationEngaged(void);
     float getElevation(void);
     bool isPitchEngaged(void);

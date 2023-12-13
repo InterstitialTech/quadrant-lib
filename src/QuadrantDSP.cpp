@@ -1,6 +1,4 @@
-#include "Arduino.h"
 #include "QuadrantDSP.h"
-#include "QuadrantCommon.h"
 
 
 void QuadrantDSP::begin(void){
@@ -29,7 +27,7 @@ void QuadrantDSP::update(uint16_t *frame){
 
 }
 
-void QuadrantDSP::popFrameMulticore(uint16_t *frame) {
+void QuadrantDSP::popFrame(uint16_t *frame) {
 
   for (int i=0; i<4; i++) {
     frame[i] = (uint16_t) rp2040.fifo.pop();
@@ -94,6 +92,12 @@ float QuadrantDSP::getLidarDistanceFiltered(int index) {
   }
 
   return float(tmp) / _len_filter;
+
+}
+
+bool QuadrantDSP::isLidarEngaged(int index) {
+
+  return _engaged[index];
 
 }
 
