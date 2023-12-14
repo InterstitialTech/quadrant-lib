@@ -112,6 +112,12 @@ void QuadrantDSP::updateFilter(void) {
 
 // getters
 
+bool QuadrantDSP::isFilterEnabled(void) {
+
+  return _filter_enabled;
+
+}
+
 uint32_t QuadrantDSP::getTimestamp(void) {
 
   return _timestamp;

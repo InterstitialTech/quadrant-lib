@@ -12,6 +12,7 @@ class QuadrantDSP {
     void updateFromFifo(void);
     void initFilter(uint8_t len);
     void updateFilter(void);
+    bool isFilterEnabled(void);
     void calibrateOffsets(void);
     uint32_t getTimestamp(void);
     uint16_t getLidarDistance(int index);

@@ -32,6 +32,13 @@ void QuadrantOut::begin(void){
 
   // init JSON report
   _report = new StaticJsonDocument<512>;;
+  _report_bitmask = 0x0;
+
+  configureReport(REPORT_FIELD_TIMESTAMP, true);
+  configureReport(REPORT_FIELD_LIDAR0, true);
+  configureReport(REPORT_FIELD_LIDAR1, true);
+  configureReport(REPORT_FIELD_LIDAR2, true);
+  configureReport(REPORT_FIELD_LIDAR3, true);
 
 }
 
@@ -51,33 +58,77 @@ void QuadrantOut::displayStartupLeds(void) {
 
 }
 
-void QuadrantOut::printReportToSerial(void) {
+void QuadrantOut::configureReport(enum REPORT_FIELD field, bool enabled) {
 
+  if (enabled) {
+    _report_bitmask |=  (1 << field);
+  } else {
+    _report_bitmask &= ~(1 << field);
+  }
+
+}
+
+void QuadrantOut::updateReport(QuadrantDSP *dsp) {
+
+  JsonObject jsonObject;
   _report->clear();
 
-  //JsonObject lidar0 = _report->createNestedObject("lidar0");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_TIMESTAMP)) {
+    jsonObject = _report->to<JsonObject>();
+    jsonObject["ts"] = dsp->getTimestamp();
+  }
 
-  //JsonObject lidar1 = _report->createNestedObject("lidar1");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR0)) {
+    jsonObject = _report->createNestedObject("l0");
+    jsonObject["en"] = dsp->isLidarEngaged(0);
+    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(0)) : dsp->getLidarDistance(0);
+  }
 
-  //JsonObject lidar2 = _report->createNestedObject("lidar2");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR1)) {
+    jsonObject = _report->createNestedObject("l1");
+    jsonObject["en"] = dsp->isLidarEngaged(1);
+    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(1)) : dsp->getLidarDistance(1);
+  }
 
-  //JsonObject lidar3 = _report->createNestedObject("lidar3");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR2)) {
+    jsonObject = _report->createNestedObject("l2");
+    jsonObject["en"] = dsp->isLidarEngaged(2);
+    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(2)) : dsp->getLidarDistance(2);
+  }
 
-  //JsonObject elevation = _report->createNestedObject("elevation");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR3)) {
+    jsonObject = _report->createNestedObject("l3");
+    jsonObject["en"] = dsp->isLidarEngaged(3);
+    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(3)) : dsp->getLidarDistance(3);
+  }
 
-  //JsonObject pitch = _report->createNestedObject("pitch");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_ELEVATION)) {
+    jsonObject = _report->createNestedObject("elevation");
+    jsonObject["en"] = dsp->isElevationEngaged();
+    jsonObject["val"] = _round3(dsp->getElevation());
+  }
 
-  //JsonObject roll = _report->createNestedObject("roll");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_PITCH)) {
+    jsonObject = _report->createNestedObject("pitch");
+    jsonObject["en"] = dsp->isPitchEngaged();
+    jsonObject["val"] = _round3(dsp->getPitch());
+  }
 
-  //JsonObject arc = _report->createNestedObject("arc");
-  // TODO
+  if (_report_bitmask & (1 << REPORT_FIELD_ROLL)) {
+    jsonObject = _report->createNestedObject("roll");
+    jsonObject["en"] = dsp->isRollEngaged();
+    jsonObject["val"] = _round3(dsp->getRoll());
+  }
+
+  if (_report_bitmask & (1 << REPORT_FIELD_ARC)) {
+    jsonObject = _report->createNestedObject("arc");
+    jsonObject["en"] = dsp->isArcEngaged();
+    jsonObject["val"] = _round3(dsp->getArc());
+  }
+
+}
+
+void QuadrantOut::printReportToSerial(void) {
 
   serializeJson(*_report, Serial);
   Serial.println();
