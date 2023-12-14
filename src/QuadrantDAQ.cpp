@@ -9,7 +9,7 @@ void QuadrantDAQ::begin(void){
 
   // initialize private variables
   for (int i=0; i<4; i++) {
-    _distance[i] = 0xff;
+    _distance[i] = 0xffff;
     _lidarEnabled[i] = false;
   }
 
