@@ -136,9 +136,9 @@ void QuadrantDAQ::_initLidar(int index) {
       Serial.print(F("Failed to boot VL53L0X #"));
       Serial.println(index);
     }
-    _lidars[index]->setMeasurementTimingBudget(24000);
     _lidars[index]->setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 12);
     _lidars[index]->setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 8);
+    _lidars[index]->setMeasurementTimingBudget(24000);
     _lidars[index]->setAddress(_lidarAddrs[index]);
 
     setLidarEnabled(index, true);
@@ -148,6 +148,15 @@ void QuadrantDAQ::_initLidar(int index) {
     } else if (_smode == SAMPLINGMODE_PERIODIC) {
       _lidars[index]->startContinuous(24);
     }
+
+}
+
+uint32_t QuadrantDAQ::getLidarTimingBudget(int index) {
+
+  // the actual timing budget is often different from what's requested
+  // this allows to to confirm the actual timing budget on each sensor
+
+  return _lidars[index]->getMeasurementTimingBudget();
 
 }
 

@@ -33,6 +33,7 @@ class QuadrantDAQ {
 
     // getters
     int getSamplingMode(void);
+    uint32_t getLidarTimingBudget(int index);
     uint16_t getLidarDistance(int index);
     uint32_t getTimestamp(void);
     bool isLidarEngaged(int index);
