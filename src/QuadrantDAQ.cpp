@@ -13,8 +13,6 @@ void QuadrantDAQ::begin(void){
     _lidarEnabled[i] = false;
   }
 
-  _smode = SAMPLINGMODE_CONTINUOUS;
-
   // Lidars
   for (int i=0; i<4; i++) {
     pinMode(_lidarPins[i], OUTPUT);
@@ -26,6 +24,21 @@ void QuadrantDAQ::begin(void){
   }
 
   _timestamp = 0;
+
+}
+
+void QuadrantDAQ::setSamplingMode(enum SamplingMode mode) {
+
+  // NOTE: after setting the sampling mode, you must then call QuadrantDAQ::begin()
+  // in order for it to take effect!
+
+  _smode = mode;
+
+}
+
+int QuadrantDAQ::getSamplingMode(void) {
+
+  return _smode;
 
 }
 
@@ -48,11 +61,13 @@ void QuadrantDAQ::update(void) {
       _update_single_sequential();
       break;
     case SAMPLINGMODE_SINGLE_PIPELINE:
+      // TODO
       break;
     case SAMPLINGMODE_CONTINUOUS:
       _update_continuous_round_robin();
       break;
-    case SAMPLINGMODE_CONTINUOUS_TIMED:
+    case SAMPLINGMODE_PERIODIC:
+      _update_continuous_round_robin();
       break;
     default:
       break;
@@ -122,11 +137,10 @@ void QuadrantDAQ::_initLidar(int index) {
 
     setLidarEnabled(index, true);
 
-    if ((_smode == SAMPLINGMODE_CONTINUOUS)
-          || (_smode == SAMPLINGMODE_CONTINUOUS_TIMED)) {
-
+    if (_smode == SAMPLINGMODE_CONTINUOUS) {
       _lidars[index]->startContinuous();
-
+    } else if (_smode == SAMPLINGMODE_PERIODIC) {
+      _lidars[index]->startContinuous(24);
     }
 
 }
@@ -139,13 +153,12 @@ bool QuadrantDAQ::_isLidarReady(uint8_t index){
 
 uint16_t QuadrantDAQ::_readLidar(uint8_t index){
 
-  uint16_t d = 0xff;
+  uint16_t d;
 
   // assumptions: Linearity Corrective Gain is 1000 (default);
   // fractional ranging is not enabled
 
   d = _lidars[index]->readReg16Bit(VL53L0X::RESULT_RANGE_STATUS + 10);
-
   _lidars[index]->writeReg(VL53L0X::SYSTEM_INTERRUPT_CLEAR, 0x01);
 
   return d;

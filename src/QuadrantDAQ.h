@@ -11,10 +11,16 @@ class QuadrantDAQ {
   public:
 
     enum SamplingMode {
-      SAMPLINGMODE_SINGLE_SEQUENTIAL,
-      SAMPLINGMODE_SINGLE_PIPELINE,
-      SAMPLINGMODE_CONTINUOUS,
-      SAMPLINGMODE_CONTINUOUS_TIMED
+      SAMPLINGMODE_SINGLE_SEQUENTIAL, // on update(), single lidar measurements are started one at
+                                      //    a time, waiting for completion before starting the next
+
+      SAMPLINGMODE_SINGLE_PIPELINE,   // on update(), single lidar measuremets are started (nearly)
+                                      //    simultaneously, then round-robin queried for completion
+
+      SAMPLINGMODE_CONTINUOUS,        // new measurements auto-start as fast as possible (~43-67 Hz),
+                                      //    but not necessarily periodically
+
+      SAMPLINGMODE_PERIODIC           // new measurements auto-start after a fixed period (42.4 Hz) 
     }; 
 
     void begin(void);
@@ -22,9 +28,11 @@ class QuadrantDAQ {
     void pushToFifo(void);
 
     // setters
+    void setSamplingMode(enum SamplingMode mode);
     void setLidarEnabled(int index, bool enabled);
 
     // getters
+    int getSamplingMode(void);
     uint16_t getLidarDistance(int index);
     uint32_t getTimestamp(void);
     bool isLidarEngaged(int index);
@@ -41,7 +49,7 @@ class QuadrantDAQ {
     uint32_t _timestamp;
     bool _engaged[4];
     bool _lidarEnabled[4];
-    enum SamplingMode _smode;
+    enum SamplingMode _smode = SAMPLINGMODE_PERIODIC; // default
 
     void _initLidar(int index);
     void _update_single_sequential(void);
