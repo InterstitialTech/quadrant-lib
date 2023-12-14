@@ -5,6 +5,7 @@
 
 #include "QuadrantCommon.h"
 
+class QuadrantOut;
 
 class QuadrantDAQ {
 
@@ -24,8 +25,9 @@ class QuadrantDAQ {
     }; 
 
     void begin(void);
-    void update(void);
+    void update(QuadrantOut *debug_out=NULL);
     void pushToFifo(void);
+    void waitUntilAllRanging(QuadrantOut *debug_out=NULL);
 
     // setters
     void setSamplingMode(enum SamplingMode mode);
@@ -36,9 +38,9 @@ class QuadrantDAQ {
     uint32_t getLidarTimingBudget(int index);
     uint16_t getLidarDistance(int index);
     uint32_t getTimestamp(void);
-    bool isLidarEngaged(int index);
     bool isLidarEnabled(int index);
     uint8_t getTimeoutMask(void);
+    bool isLidarRanging(uint8_t index);
 
   private:
 
@@ -49,14 +51,13 @@ class QuadrantDAQ {
 
     uint16_t _distance[4];
     uint32_t _timestamp;
-    bool _engaged[4];
     bool _lidarEnabled[4];
     enum SamplingMode _smode = SAMPLINGMODE_PERIODIC; // default
 
     void _initLidar(int index);
     void _update_single_sequential(void);
     void _update_continuous_sequential(void);
-    void _update_continuous_round_robin(void);
+    void _update_continuous_round_robin(QuadrantOut *debug_out=NULL);
     bool _isLidarReady(uint8_t index);
     uint16_t _readLidar(uint8_t index);
 
