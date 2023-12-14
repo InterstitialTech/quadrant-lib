@@ -117,6 +117,12 @@ uint32_t QuadrantDAQ::getTimestamp(void) {
 
 }
 
+uint8_t QuadrantDAQ::getTimeoutMask(void) {
+
+  return _timeout_mask;
+
+}
+
 // private methods below
 
 void QuadrantDAQ::_initLidar(int index) {
@@ -169,11 +175,12 @@ void QuadrantDAQ::_update_single_sequential(void) {
 
   uint16_t d;
 
+  _timeout_mask = 0;
   for (int i=0; i<4; i++) {
     if (isLidarEnabled(i)) {
       d = _lidars[i]->readRangeSingleMillimeters();
       if (_lidars[i]->timeoutOccurred()) {
-        Serial.println("timeout occurred!");
+        _timeout_mask |= (1 << i);
         continue;
       }
       _distance[i] = d;
@@ -186,11 +193,12 @@ void QuadrantDAQ::_update_continuous_sequential(void) {
 
   uint16_t d;
 
+  _timeout_mask = 0;
   for (int i=0; i<4; i++) {
     if (isLidarEnabled(i)) {
       d = _lidars[i]->readRangeContinuousMillimeters();
       if (_lidars[i]->timeoutOccurred()) {
-        Serial.println("timeout occurred!");
+        _timeout_mask |= (1 << i);
         continue;
       }
       _distance[i] = d;
@@ -201,20 +209,25 @@ void QuadrantDAQ::_update_continuous_sequential(void) {
 
 void QuadrantDAQ::_update_continuous_round_robin(void) {
 
-  // note: no timeout checking here
-
   bool done[4];
+  unsigned long t0 = millis();
 
   for (int i=0; i<4; i++) {
     done[i] = !isLidarEnabled(i);
   }
 
+  _timeout_mask = 0;
   while (!(done[0] && done[1] && done[2] && done[3])) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
           _distance[i] = _readLidar(i);
           done[i] = true;
+        } else if ((millis() - t0) > QUADRANT_TIMEOUT_MS) {
+          _distance[i] = 0xffff;
+          done[i] = true;
+          _timeout_mask |= (1 << i);
+          // TODO: cleanup? restart the measurement?
         }
       }
     }

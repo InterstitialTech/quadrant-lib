@@ -37,6 +37,7 @@ class QuadrantDAQ {
     uint32_t getTimestamp(void);
     bool isLidarEngaged(int index);
     bool isLidarEnabled(int index);
+    uint8_t getTimeoutMask(void);
 
   private:
 
@@ -57,6 +58,8 @@ class QuadrantDAQ {
     void _update_continuous_round_robin(void);
     bool _isLidarReady(uint8_t index);
     uint16_t _readLidar(uint8_t index);
+
+    uint8_t _timeout_mask = 0;
 
 };
 
