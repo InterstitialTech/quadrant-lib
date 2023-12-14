@@ -11,15 +11,18 @@ void QuadrantDSP::begin(void){
 
   _thresh = QUADRANT_THRESH_DEFAULT_MM;
   _filter_enabled = false;
+  _timestamp = 0;
 
 }
 
-void QuadrantDSP::update(uint16_t *frame){
+void QuadrantDSP::update(QuadrantDAQ *daq) {
 
   for (int i=0; i<4; i++) {
-    _distance[i] = frame[i];
+    _distance[i] = daq->getLidarDistance(i);
     _engaged[i] = (_distance[i] < _thresh);
   }
+
+  _timestamp = daq->getTimestamp();
 
   if (_filter_enabled) {
     updateFilter();
@@ -27,10 +30,35 @@ void QuadrantDSP::update(uint16_t *frame){
 
 }
 
-void QuadrantDSP::popFrame(uint16_t *frame) {
+void QuadrantDSP::updateFromFifo(void) {
+
+    uint32_t e;
+
+    // first element
+    e = rp2040.fifo.pop();
+    // if (e != 0xdeadbeef) {}   // TODO: test for packet start
+
+    // second element
+    e = rp2040.fifo.pop();
+    // if (!(e & (0b100 << 29))) {}   // TODO: test for channels 0,1
+    _distance[0] = ((e >> 16) & 0x1fff);
+    _distance[1] = (e & 0x1fff);
+
+    // third element
+    e = rp2040.fifo.pop();
+    // if (!(e & (0b101 << 29))) {}   // TODO: test for channels 2,3
+    _distance[2] = ((e >> 16) & 0x1fff);
+    _distance[3] = (e & 0x1fff);
+
+    // fourth element
+    _timestamp = rp2040.fifo.pop();
 
   for (int i=0; i<4; i++) {
-    frame[i] = (uint16_t) rp2040.fifo.pop();
+    _engaged[i] = (_distance[i] < _thresh);
+  }
+
+  if (_filter_enabled) {
+    updateFilter();
   }
 
 }
@@ -82,6 +110,21 @@ void QuadrantDSP::updateFilter(void) {
 
 }
 
+// getters
+
+uint32_t QuadrantDSP::getTimestamp(void) {
+
+  return _timestamp;
+
+}
+
+uint16_t QuadrantDSP::getLidarDistance(int index) {
+
+  // distance in mm
+
+  return _distance[index];
+
+}
 
 float QuadrantDSP::getLidarDistanceFiltered(int index) {
 

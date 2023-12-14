@@ -10,11 +10,9 @@ void QuadrantDAQ::begin(void){
   // initialize private variables
   for (int i=0; i<4; i++) {
     _distance[i] = 0xff;
-    _engaged[i] = false;
     _lidarEnabled[i] = false;
   }
 
-  _thresh = QUADRANT_THRESH_DEFAULT_MM;
   _smode = SAMPLINGMODE_CONTINUOUS;
 
   // Lidars
@@ -27,6 +25,8 @@ void QuadrantDAQ::begin(void){
     _initLidar(i);
   }
 
+  _timestamp = 0;
+
 }
 
 void QuadrantDAQ::setLidarEnabled(int index, bool enabled) {
@@ -38,12 +38,6 @@ void QuadrantDAQ::setLidarEnabled(int index, bool enabled) {
 bool QuadrantDAQ::isLidarEnabled(int index) {
 
   return _lidarEnabled[index];
-
-}
-
-void QuadrantDAQ::setEngagementThreshold(uint16_t thresh_mm) {
-
-  _thresh = thresh_mm;
 
 }
 
@@ -64,23 +58,35 @@ void QuadrantDAQ::update(void) {
       break;
   }
 
+  _timestamp = micros();
+
 }
 
-void QuadrantDAQ::pushFrame(void) {
+void QuadrantDAQ::pushToFifo(void) {
 
-    for (int i=0; i<4; i++) {
-      rp2040.fifo.push_nb(getLidarDistance(i));
-    }
+    uint32_t e;
+
+    // first byte is 0xdeadbeef, signaling packet start
+    rp2040.fifo.push_nb(0xdeadbeef);
+
+    // second byte starts with 100, signaling channels 0,1
+    e = (0b100) << 29;
+    e |= (getLidarDistance(0) & 0x1fff) << 16;
+    e |= (getLidarDistance(1) & 0x1fff) << 0;
+    rp2040.fifo.push_nb(e);
+
+    // third byte starts with 101, signaling channels 2,3
+    e = (0b101) << 29;
+    e |= (getLidarDistance(2) & 0x1fff) << 16;
+    e |= (getLidarDistance(3) & 0x1fff) << 0;
+    rp2040.fifo.push_nb(e);
+
+    // fourth byte is the entire timestamp (32 bits)
+    rp2040.fifo.push_nb(_timestamp);
 
 }
 
 // getters
-
-bool QuadrantDAQ::isLidarEngaged(int index) {
-
-  return _engaged[index];
-
-}
 
 uint16_t QuadrantDAQ::getLidarDistance(int index) {
 
@@ -90,11 +96,15 @@ uint16_t QuadrantDAQ::getLidarDistance(int index) {
 
 }
 
+uint32_t QuadrantDAQ::getTimestamp(void) {
+
+  return _timestamp;
+
+}
+
 // private methods below
 
 void QuadrantDAQ::_initLidar(int index) {
-
-    digitalWrite(_ledPins[index], HIGH);
 
     digitalWrite(_lidarPins[index], HIGH);
     delay(100);
@@ -118,7 +128,6 @@ void QuadrantDAQ::_initLidar(int index) {
       _lidars[index]->startContinuous();
 
     }
-    digitalWrite(_ledPins[index], LOW);
 
 }
 
@@ -155,7 +164,6 @@ void QuadrantDAQ::_update_single_sequential(void) {
         continue;
       }
       _distance[i] = d;
-      _engaged[i] = (_distance[i] < _thresh);
     }
   }
 
@@ -173,7 +181,6 @@ void QuadrantDAQ::_update_continuous_sequential(void) {
         continue;
       }
       _distance[i] = d;
-      _engaged[i] = (_distance[i] < _thresh);
     }
   }
 
@@ -194,7 +201,6 @@ void QuadrantDAQ::_update_continuous_round_robin(void) {
       if (!done[i]) {
         if (_isLidarReady(i)) {
           _distance[i] = _readLidar(i);
-          _engaged[i] = (_distance[i] < _thresh);
           done[i] = true;
         }
       }

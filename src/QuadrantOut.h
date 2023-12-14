@@ -10,6 +10,7 @@ class QuadrantOut {
   public:
 
     void begin(void);
+    void displayStartupLeds(void);
     void setLed(int index, int state);
     void setCV(int chan, float voltage);
     void setGate(int index, int state);

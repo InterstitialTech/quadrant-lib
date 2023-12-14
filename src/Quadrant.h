@@ -16,9 +16,11 @@ class Quadrant {
 
   public:
 
+    // methods
     void begin(void);
+    void update(void);
 
-    // Modules
+    // submodules
     QuadrantDAQ daq;
     QuadrantDSP dsp;
     QuadrantOut out;

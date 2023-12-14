@@ -35,6 +35,22 @@ void QuadrantOut::begin(void){
 
 }
 
+void QuadrantOut::displayStartupLeds(void) {
+
+  // run a sequence of LED flashes to indicate the device has started
+
+  for (int i=0; i<4; i++) {
+    setLed(i, LOW);
+  }
+
+  for (int i=0; i<8; i++) {
+    setLed(i%4, HIGH);
+    delay(100);
+    setLed(i%4, LOW);
+  }
+
+}
+
 void QuadrantOut::printReportToSerial(void) {
 
   _report->clear();
