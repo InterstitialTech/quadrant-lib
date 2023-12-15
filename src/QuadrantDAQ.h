@@ -52,7 +52,7 @@ class QuadrantDAQ {
     uint16_t _distance[4];
     uint32_t _timestamp;
     bool _lidarEnabled[4];
-    enum SamplingMode _smode = SAMPLINGMODE_PERIODIC; // default
+    enum SamplingMode _smode = SAMPLINGMODE_SINGLE_PIPELINE; // default
 
     void _initLidar(int index);
     bool _isLidarReady(uint8_t index);
