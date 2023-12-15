@@ -18,43 +18,41 @@
 #define ARC_THRESHOLD_SCROLL -0.01
 
 #include "Quadrant.h"
-#include "Mouse.h"
-
-
 Quadrant quadrant;
+
+#include "Mouse.h"
 
 
 void setup() {
 
   quadrant.begin();
-  quadrant.calibrateOffsets();
+  quadrant.dsp.initFilter(4);
   Mouse.begin();
 
 }
 
-
 void loop() {
 
-  // take lidar measurement and update state variables
+  // take lidar measurement and update internal state
   quadrant.update();
 
   // set indicator leds
   for (int i=0; i<4; i++) {
-    if (quadrant.isLidarEngaged(i)) {
-      quadrant.setLed(i, HIGH);
+    if (quadrant.dsp.isLidarEngaged(i)) {
+      quadrant.out.setLed(i, HIGH);
     } else {
-      quadrant.setLed(i, LOW);
+      quadrant.out.setLed(i, LOW);
     }
   }
 
   // mouse control
-  if (quadrant.isElevationEngaged()) {
+  if (quadrant.dsp.isElevationEngaged()) {
     // either scroll or move (and possibly click)
-    if (quadrant.getArc() < ARC_THRESHOLD_SCROLL) {
-      Mouse.move(0, 0, (-1) * quadrant.getPitch() * 20);
+    if (quadrant.dsp.getArc() < ARC_THRESHOLD_SCROLL) {
+      Mouse.move(0, 0, (-1) * quadrant.dsp.getPitch() * 20);
     } else {
-      Mouse.move(quadrant.getRoll() * 127, quadrant.getPitch() * 127, 0);
-      if (quadrant.getElevation() < ELEVATION_THRESHOLD_CLICK) {
+      Mouse.move(quadrant.dsp.getRoll() * 127, quadrant.dsp.getPitch() * 127, 0);
+      if (quadrant.dsp.getElevation() < ELEVATION_THRESHOLD_CLICK) {
         Mouse.click();
       }
     }
