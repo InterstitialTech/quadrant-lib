@@ -126,10 +126,7 @@ bool QuadrantDAQ::isLidarEnabled(int index) {
 
 bool QuadrantDAQ::isLidarRanging(uint8_t index) {
 
-  uint16_t status = _lidars[index]->readReg(VL53L0X::RESULT_RANGE_STATUS);
-  bool b0 = (status & (1 << 0));
-  bool b8 = (status & (1 << 8));
-  return !(b0 ^ b8);
+  return (_lidars[index]->readReg(VL53L0X::RESULT_RANGE_STATUS) & 0x01);
 
 }
 
