@@ -55,11 +55,14 @@ class QuadrantDAQ {
     enum SamplingMode _smode = SAMPLINGMODE_PERIODIC; // default
 
     void _initLidar(int index);
-    void _update_single_sequential(void);
-    void _update_continuous_sequential(void);
-    void _update_continuous_round_robin(QuadrantOut *debug_out=NULL);
     bool _isLidarReady(uint8_t index);
     uint16_t _readLidar(uint8_t index);
+
+    void _update_single_sequential(void);
+    void _update_continuous_sequential(QuadrantOut *debug_out=NULL);
+    void _update_single_round_robin(QuadrantOut *debug_out=NULL);
+    void _update_continuous_round_robin(QuadrantOut *debug_out=NULL);
+    void _collect_range_round_robin(QuadrantOut *debug_out=NULL);
 
     uint8_t _timeout_mask = 0;
 

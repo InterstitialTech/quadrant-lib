@@ -47,20 +47,18 @@ void QuadrantDAQ::setLidarEnabled(int index, bool enabled) {
 
 void QuadrantDAQ::update(QuadrantOut *debug_out) {
 
-  // optionally set debug_out to the QuadrantOut* submodule to enable in-loop
-  //  debugging via gate signals. currently sets channel gate to high while
-  //  ranging. defaults to NULL (no debugging)
-
-  // wait until all (enabled) channels are ranging, before clocking the time
-  waitUntilAllRanging(debug_out);
-  _timestamp = micros();
+  // updates _distance[i] and _timestamp, depending on the sampling mode
+  // 
+  //  optionally, set debug_out to the QuadrantOut* submodule to enable in-loop
+  //  debugging via gate signals during while loops. currently sets channel gate
+  //  to high while ranging. defaults to NULL (no debugging)
 
   switch (_smode) {
     case SAMPLINGMODE_SINGLE_SEQUENTIAL:
       _update_single_sequential();
       break;
     case SAMPLINGMODE_SINGLE_PIPELINE:
-      // TODO
+      _update_single_round_robin(debug_out);
       break;
     case SAMPLINGMODE_CONTINUOUS:
     case SAMPLINGMODE_PERIODIC:
@@ -205,9 +203,6 @@ uint16_t QuadrantDAQ::_readLidar(uint8_t index){
 
   uint16_t d;
 
-  // assumptions: Linearity Corrective Gain is 1000 (default);
-  // fractional ranging is not enabled
-
   d = _lidars[index]->readReg16Bit(VL53L0X::RESULT_RANGE_STATUS + 10);
   _lidars[index]->writeReg(VL53L0X::SYSTEM_INTERRUPT_CLEAR, 0x01);
 
@@ -218,6 +213,8 @@ uint16_t QuadrantDAQ::_readLidar(uint8_t index){
 void QuadrantDAQ::_update_single_sequential(void) {
 
   uint16_t d;
+
+  _timestamp = micros();
 
   _timeout_mask = 0;
   for (int i=0; i<4; i++) {
@@ -233,9 +230,12 @@ void QuadrantDAQ::_update_single_sequential(void) {
 
 }
 
-void QuadrantDAQ::_update_continuous_sequential(void) {
+void QuadrantDAQ::_update_continuous_sequential(QuadrantOut *debug_out) {
 
   uint16_t d;
+
+  waitUntilAllRanging(debug_out);
+  _timestamp = micros();
 
   _timeout_mask = 0;
   for (int i=0; i<4; i++) {
@@ -251,10 +251,45 @@ void QuadrantDAQ::_update_continuous_sequential(void) {
 
 }
 
+void QuadrantDAQ::_update_single_round_robin(QuadrantOut *debug_out) {
+
+  // start all (enabled) sensors ranging
+  for (int i=0; i<4; i++) {
+    if (isLidarEnabled(i)) {
+      _lidars[i]->writeReg(VL53L0X::SYSRANGE_START, 0x01);
+    } else {
+    }
+  }
+
+  // clock the timestamp
+  _timestamp = micros();
+
+  // collect _distance[i]
+  _collect_range_round_robin(debug_out);
+
+
+}
+
 void QuadrantDAQ::_update_continuous_round_robin(QuadrantOut *debug_out) {
 
+  waitUntilAllRanging(debug_out);
+  _timestamp = micros();
+
+  _collect_range_round_robin(debug_out);
+
+}
+
+void QuadrantDAQ::_collect_range_round_robin(QuadrantOut *debug_out) {
+
+  // goes around all enabled sensors in a while loop, polling for readiness and
+  // collecting their range measurements into _distance[i]
+  //
+  // obeys QUADRANT_TIMEOUT_MS and sets _timeout_mask
+  //
+  // follows the debug_out paradigm (default NULL, no debugging)
+
   bool done[4];
-  unsigned long t0;;
+  unsigned long t0;
 
   for (int i=0; i<4; i++) {
     done[i] = !isLidarEnabled(i);
@@ -264,8 +299,8 @@ void QuadrantDAQ::_update_continuous_round_robin(QuadrantOut *debug_out) {
   t0 = millis();
   while (!(done[0] && done[1] && done[2] && done[3])) {
     for (int i=0; i<4; i++) {
+      if (debug_out) debug_out->setGate(i, isLidarRanging(i));
       if (!done[i]) {
-        if (debug_out && !isLidarRanging(i)) debug_out->setGate(i, LOW);
         if (_isLidarReady(i)) {
           _distance[i] = _readLidar(i);
           done[i] = true;
