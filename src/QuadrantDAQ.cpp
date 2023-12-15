@@ -2,8 +2,8 @@
 #include "QuadrantDAQ.h"
 #include "QuadrantOut.h"
 
-#define QUADRANT_TIMING_BUDGET_US 24000
-#define QUADRANT_SAMPLING_PERIOD_MS 30
+#define QUADRANT_TIMING_BUDGET_US 20000
+#define QUADRANT_SAMPLING_PERIOD_MS 24
 
 void QuadrantDAQ::begin(void){
 
