@@ -116,7 +116,7 @@ void QuadrantDSP::setEngagementThreshold(uint16_t value_mm) {
 
 }
 
-// getters
+// GETTERS
 
 bool QuadrantDSP::isFilterEnabled(void) {
 

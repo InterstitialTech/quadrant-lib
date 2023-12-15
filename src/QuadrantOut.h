@@ -11,14 +11,6 @@ class QuadrantOut {
   public:
 
     void begin(void);
-    void displayStartupLeds(void);
-    void setLed(int index, int state);
-    void setCV(int chan, float voltage);
-    void setGate(int index, int state);
-    void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
-    void sendMidiNoteOff(uint8_t, uint8_t);
-    void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
-
     enum REPORT_FIELD{
       REPORT_FIELD_TIMESTAMP= 0,
       REPORT_FIELD_LIDAR0 = 1,
@@ -30,9 +22,17 @@ class QuadrantOut {
       REPORT_FIELD_ROLL = 7,
       REPORT_FIELD_ARC = 8
     };
-
     void configureReport(enum REPORT_FIELD, bool enabled);
     void updateReport(QuadrantDSP *dsp);
+
+    // OUTPUTS
+    void displayStartupLeds(void);
+    void setLed(int index, int state);
+    void setCV(int chan, float voltage);
+    void setGate(int index, int state);
+    void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
+    void sendMidiNoteOff(uint8_t, uint8_t);
+    void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
     void printReportToSerial(void);
 
   private:

@@ -134,6 +134,8 @@ void QuadrantOut::updateReport(QuadrantDSP *dsp) {
 
 }
 
+// OUTPUTS
+
 void QuadrantOut::printReportToSerial(void) {
 
   serializeJson(*_report, Serial);
