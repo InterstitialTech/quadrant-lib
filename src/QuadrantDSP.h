@@ -7,16 +7,21 @@
 class QuadrantDSP {
 
   public:
+
     void begin(void);
     void update(QuadrantDAQ *daq);
     void updateFromFifo(void);
-    void initFilter(uint8_t len);
     void updateFilter(void);
-    bool isFilterEnabled(void);
     void calibrateOffsets(void);
+
+    void initFilter(uint8_t len);
+    void setEngagementThreshold(uint16_t value_mm);
+
+    bool isFilterEnabled(void);
     uint32_t getTimestamp(void);
     uint16_t getLidarDistance(int index);
     float getLidarDistanceFiltered(int index);
+    uint16_t getEngagementThreshold(void);
     bool isLidarEngaged(int index);
     bool isElevationEngaged(void);
     float getElevation(void);
@@ -28,6 +33,7 @@ class QuadrantDSP {
     float getArc(void);
 
   private:
+
     uint16_t _distance[4];
     bool _engaged[4];
     uint32_t _timestamp;

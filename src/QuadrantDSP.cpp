@@ -110,6 +110,12 @@ void QuadrantDSP::updateFilter(void) {
 
 }
 
+void QuadrantDSP::setEngagementThreshold(uint16_t value_mm) {
+
+  _thresh = value_mm;
+
+}
+
 // getters
 
 bool QuadrantDSP::isFilterEnabled(void) {
@@ -141,6 +147,12 @@ float QuadrantDSP::getLidarDistanceFiltered(int index) {
   }
 
   return float(tmp) / _len_filter;
+
+}
+
+uint16_t QuadrantDSP::getEngagementThreshold(void) {
+
+  return _thresh;
 
 }
 
