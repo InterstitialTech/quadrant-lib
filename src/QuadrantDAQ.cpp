@@ -143,7 +143,7 @@ void QuadrantDAQ::waitUntilAllRanging(QuadrantOut *debug_out) {
     for (int i=0; i<4; i++) {
       if (!done[i]) {
         done[i] = isLidarRanging(i);
-        if (done[i] and debug_out) debug_out->setGate(i, HIGH);
+        if (debug_out) debug_out->setGate(i, done[i]);
       }
     }
   }
