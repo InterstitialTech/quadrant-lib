@@ -34,11 +34,16 @@ void QuadrantOut::begin(void){
   _report = new StaticJsonDocument<512>;;
   _report_bitmask = 0x0;
 
+  // default report config
   configureReport(REPORT_FIELD_TIMESTAMP, true);
   configureReport(REPORT_FIELD_LIDAR0, true);
   configureReport(REPORT_FIELD_LIDAR1, true);
   configureReport(REPORT_FIELD_LIDAR2, true);
   configureReport(REPORT_FIELD_LIDAR3, true);
+  configureReport(REPORT_FIELD_ELEVATION, true);
+  configureReport(REPORT_FIELD_PITCH, true);
+  configureReport(REPORT_FIELD_ROLL, true);
+  configureReport(REPORT_FIELD_ARC, true);
 
 }
 
