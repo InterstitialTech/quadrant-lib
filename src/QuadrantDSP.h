@@ -21,6 +21,7 @@ class QuadrantDSP {
     uint32_t getTimestamp(void);
     uint16_t getLidarDistance(int index);
     float getLidarDistanceFiltered(int index);
+    float getLidarDistanceNormalized(int index);
     uint16_t getEngagementThreshold(void);
     bool isLidarEngaged(int index);
     bool isElevationEngaged(void);

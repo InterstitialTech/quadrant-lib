@@ -150,6 +150,12 @@ float QuadrantDSP::getLidarDistanceFiltered(int index) {
 
 }
 
+float QuadrantDSP::getLidarDistanceNormalized(int index) {
+
+  return getLidarDistanceFiltered(index)/ _thresh;
+
+}
+
 uint16_t QuadrantDSP::getEngagementThreshold(void) {
 
   return _thresh;
