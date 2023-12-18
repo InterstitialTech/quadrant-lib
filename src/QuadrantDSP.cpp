@@ -152,7 +152,7 @@ float QuadrantDSP::getLidarDistanceFiltered(int index) {
 
 float QuadrantDSP::getLidarDistanceNormalized(int index) {
 
-  return getLidarDistanceFiltered(index)/ _thresh;
+  return float(getLidarDistance(index)) / _thresh;
 
 }
 
