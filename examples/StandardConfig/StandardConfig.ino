@@ -84,12 +84,14 @@ void loop1(void) {
   // update DSP module
   quadrant.dsp.updateFromFifo();
 
-  // set indicator leds
+  // set LEDs and Gates according to engagement
   for (int i=0; i<4; i++) {
     if (quadrant.dsp.isLidarEngaged(i)) {
       quadrant.out.setLed(i, HIGH);
+      quadrant.out.setGate(i, HIGH);
     } else {
       quadrant.out.setLed(i, LOW);
+      quadrant.out.setGate(i, LOW);
     }
   }
 
