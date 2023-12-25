@@ -1,9 +1,7 @@
 #include <Wire.h>
 #include "Quadrant.h"
 
-void Quadrant::begin(void){
-
-  // basic single-core setup()
+void Quadrant::begin(void) {
 
   daq.begin();
   dsp.begin();
@@ -12,17 +10,63 @@ void Quadrant::begin(void){
 
 }
 
-void Quadrant::update(void){
+void Quadrant::run(void) {
 
-  // basic single-core loop():
-  //  call this as quickly as you like (it will block until data is ready)
-  //  then you can access:
-  //    - quadrant.dsp GETTERS
-  //    - quadrant.out OUTPUTS
+  // send the go cue to the other core
 
-  daq.update();
-  dsp.update(&daq);
+  rp2040.fifo.push(0xdeadbeef);
+  rp2040.fifo.push((uint32_t)this);
+
+}
+
+bool Quadrant::newDataReady(void) {
+
+	// NOTE: the default fifo size is only 8 (TODO: increase)
+
+  return (rp2040.fifo.available() >= 4);
+
+}
+
+void Quadrant::update(void) {
+
+	// grab next data packet
+	// update DSP machine
+	// update report
+	// (TODO: add dataOrder = (next || last) argument)
+
+  dsp.updateFromFifo();
   out.updateReport(&dsp);
+
+}
+
+bool Quadrant::getLidarDistance(int index) {
+
+	return dsp.getLidarDistance(index);
+
+}
+
+
+bool Quadrant::isLidarEngaged(int index) {
+
+	return dsp.isLidarEngaged(index);
+
+}
+
+void Quadrant::setLed(int chan, int state) {
+
+	return out.setLed(chan, state);
+
+}
+
+void Quadrant::setCV(int chan, float voltage) {
+
+	out.setCV(chan, voltage);
+
+}
+
+void Quadrant::printReportToSerial(void) {
+
+	out.printReportToSerial();
 
 }
 
