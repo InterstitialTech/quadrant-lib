@@ -16,10 +16,12 @@ void QuadrantOut::begin(void){
   }
 
   // DAC
+  /*
   Wire1.setSDA(6);
   Wire1.setSCL(7);
   Wire1.setClock(400000);
   Wire1.begin();
+  */
 
   // gate pins
   for (int i=0; i<4; i++) {

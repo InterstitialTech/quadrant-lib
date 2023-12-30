@@ -18,6 +18,8 @@ void QuadrantDAQ::begin(void){
 
   // Lidars
   for (int i=0; i<4; i++) {
+    digitalWrite(_lidarGPIO[i], HIGH); // high Z
+    pinMode(_lidarGPIO[i], INPUT);    // high Z
     pinMode(_lidarPins[i], OUTPUT);
     digitalWrite(_lidarPins[i], LOW);    
   }
