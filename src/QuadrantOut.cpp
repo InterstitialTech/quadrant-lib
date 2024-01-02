@@ -1,4 +1,3 @@
-#include <Wire.h>
 #include <MIDI.h>
 #include "QuadrantOut.h"
 
@@ -12,20 +11,6 @@ void QuadrantOut::begin(void){
   for (int i=0; i<4; i++) {
     pinMode(_ledPins[i], OUTPUT); 
     digitalWrite(_ledPins[i], LOW);
-  }
-
-  // DAC
-  /*
-  Wire1.setSDA(6);
-  Wire1.setSCL(7);
-  Wire1.setClock(400000);
-  Wire1.begin();
-  */
-
-  // gate pins
-  for (int i=0; i<4; i++) {
-    pinMode(_gatePins[i], OUTPUT); 
-    digitalWrite(_gatePins[i], LOW);
   }
 
   // MIDI in
@@ -51,6 +36,17 @@ void QuadrantOut::begin(void){
   configureReport(REPORT_FIELD_PITCH, true);
   configureReport(REPORT_FIELD_ROLL, true);
   configureReport(REPORT_FIELD_ARC, true);
+
+  // gate pins
+  for (int i=0; i<4; i++) {
+    pinMode(_gatePins[i], OUTPUT); 
+    digitalWrite(_gatePins[i], LOW);
+  }
+
+  // DAC
+  _dac = new AD5317R(QUADRANT_DAC_NSYNC_PIN, QUADRANT_DAC_SCLK_PIN,
+                      QUADRANT_DAC_SDIN_PIN, QUADRANT_DAC_NLDAC_PIN);
+  _dac->begin();
 
 }
 
@@ -207,17 +203,11 @@ void QuadrantOut::handleMidiThru(void) {
 
 // private methods below
 
-void QuadrantOut::_writeDac(uint8_t chan, int value){
+void QuadrantOut::_writeDac(uint8_t chan, uint16_t value){
 
-  if (value > 1023) {
-    value = 1023;
-  }
+  if (chan > 3) chan = 3;
 
-  Wire1.beginTransmission(byte(0x58));
-  Wire1.write(_dacAddrs[chan]);
-  Wire1.write(value >> 2);
-  Wire1.write((value & 0x03) << 6);
-  Wire1.endTransmission();
+  _dac->setChannelValue(_dacAddrs[chan], value);
 
 }
 

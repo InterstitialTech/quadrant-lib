@@ -20,7 +20,7 @@ void AD5317R::begin(void) {
   pinMode(_pin_nsync, OUTPUT);
   digitalWrite(_pin_nsync, HIGH);
   SPI1.begin(false);
-  SPI1.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE1)); 
+  SPI1.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE1)); 
 
   // power up
   _buf[0] = (0b0100 << 4);
