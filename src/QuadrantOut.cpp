@@ -3,9 +3,8 @@
 #include "QuadrantOut.h"
 
 SerialPIO QUADRANT_SOFTSERIAL(QUADRANT_MIDI_OUT_PIN, SerialPIO::NOPIN);
-MIDI_NAMESPACE::SerialMIDI<SerialPIO> QUADRANT_SOFTSERIALMIDI(QUADRANT_SOFTSERIAL);
-MIDI_CREATE_INSTANCE(SerialPIO, QUADRANT_SOFTSERIALMIDI, QUADRANT_MIDI)
-
+MIDI_NAMESPACE::SerialMIDI<SerialPIO> QUADRANT_SOFTSERIAL_MIDI_OUT(QUADRANT_SOFTSERIAL);
+MIDI_CREATE_INSTANCE(SerialPIO, QUADRANT_SOFTSERIAL_MIDI_OUT, QUADRANT_MIDI_OUT)
 
 void QuadrantOut::begin(void){
 
@@ -29,9 +28,14 @@ void QuadrantOut::begin(void){
     digitalWrite(_gatePins[i], LOW);
   }
 
-  // MIDI
+  // MIDI in
+  Serial2.end();
+  Serial2.setRX(QUADRANT_MIDI_IN_PIN); // same as INPUT_PULLDOWN below
+  Serial2.begin(31250);
+
+  // MIDI out
   QUADRANT_SOFTSERIAL.setInverted(true,true);
-  QUADRANT_MIDI.begin();
+  QUADRANT_MIDI_OUT.begin();
 
   // init JSON report
   _report = new StaticJsonDocument<512>;;
@@ -167,19 +171,37 @@ void QuadrantOut::setGate(int index, int state) {
 
 void QuadrantOut::sendMidiNoteOn(uint8_t note, uint8_t vel, uint8_t chan){
 
-  QUADRANT_MIDI.sendNoteOn(note, vel, chan);
+  QUADRANT_MIDI_OUT.sendNoteOn(note, vel, chan);
 
 }
 
 void QuadrantOut::sendMidiNoteOff(uint8_t note, uint8_t chan){
 
-  QUADRANT_MIDI.sendNoteOff(note, 0, chan);
+  QUADRANT_MIDI_OUT.sendNoteOff(note, 0, chan);
 
 }
 
 void QuadrantOut::sendMidiControlChange(uint8_t control_number, uint8_t val, uint8_t chan){
 
-  QUADRANT_MIDI.sendControlChange(control_number, val, chan);
+  QUADRANT_MIDI_OUT.sendControlChange(control_number, val, chan);
+
+}
+
+void QuadrantOut::handleMidiThru(void) {
+
+  // simple low-level passthrough
+
+  int c;
+
+  Serial.println("checking...");
+  while((Serial2.available() > 0)) {
+    Serial.println("\thello input..");
+    if ((c = Serial2.read()) >= 0) {
+      Serial.println("\t\tforwarding!");
+      QUADRANT_SOFTSERIAL.write((uint8_t)c);
+    }
+  }
+  Serial.println("...done checking:");
 
 }
 

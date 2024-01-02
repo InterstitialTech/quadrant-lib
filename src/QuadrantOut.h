@@ -33,6 +33,7 @@ class QuadrantOut {
     void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
     void sendMidiNoteOff(uint8_t, uint8_t);
     void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
+    void handleMidiThru(void);
     void printReportToSerial(void);
 
   private:
