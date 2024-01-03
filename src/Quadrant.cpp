@@ -1,12 +1,32 @@
 #include <Wire.h>
 #include "Quadrant.h"
 
+// setup, config, run
+
 void Quadrant::begin(void) {
 
   daq.begin();
   dsp.begin();
   out.begin();
   out.displayStartupLeds();
+
+}
+
+void Quadrant::setEngagementThreshold(uint16_t value_mm) {
+
+  dsp.setEngagementThreshold(value_mm);
+
+}
+
+void Quadrant::enableFilter(bool enabled) {
+
+  dsp.enableFilter(enabled);
+
+}
+
+void Quadrant::configureReport(enum QUADRANT_REPORT_FIELD field, bool enabled) {
+
+  out.configureReport(field, enabled);
 
 }
 
@@ -39,18 +59,87 @@ void Quadrant::update(void) {
 
 }
 
+// data getters
+
 uint16_t Quadrant::getLidarDistance(int index) {
 
-	return dsp.getLidarDistance(index);
+  return dsp.getLidarDistance(index);
 
 }
-
 
 bool Quadrant::isLidarEngaged(int index) {
 
 	return dsp.isLidarEngaged(index);
 
 }
+
+bool Quadrant::isFilterEnabled(void) {
+
+	return dsp.isFilterEnabled();
+
+}
+
+uint32_t Quadrant::getTimestamp(void) {
+
+  return dsp.getTimestamp();
+
+}
+
+uint16_t Quadrant::getEngagementThreshold(void) {
+
+  return dsp.getEngagementThreshold();
+
+}
+
+bool Quadrant::isElevationEngaged(void) {
+
+  return dsp.isElevationEngaged();
+
+}
+
+float Quadrant::getElevation(void) {
+
+  return dsp.getElevation();
+
+}
+
+bool Quadrant::isPitchEngaged(void) {
+
+  return dsp.isPitchEngaged();
+
+}
+
+float Quadrant::getPitch(void) {
+
+  return dsp.getPitch();
+
+}
+
+bool Quadrant::isRollEngaged(void) {
+
+  return dsp.isRollEngaged();
+
+}
+
+float Quadrant::getRoll(void) {
+
+  return dsp.getRoll();
+
+}
+
+bool Quadrant::isArcEngaged(void) {
+
+  return dsp.isArcEngaged();
+
+}
+
+float Quadrant::getArc(void) {
+
+  return dsp.getArc();
+
+}
+
+// output
 
 void Quadrant::setLed(int chan, int state) {
 
@@ -61,6 +150,36 @@ void Quadrant::setLed(int chan, int state) {
 void Quadrant::setCV(int chan, float voltage) {
 
 	out.setCV(chan, voltage);
+
+}
+
+void Quadrant::setGate(int chan, int state) {
+
+	out.setGate(chan, state);
+
+}
+
+void Quadrant::sendMidiNoteOn(uint8_t note, uint8_t vel, uint8_t chan) {
+
+  out.sendMidiNoteOn(note, vel, chan);
+
+}
+
+void Quadrant::sendMidiNoteOff(uint8_t note, uint8_t chan) {
+
+  out.sendMidiNoteOff(note, chan);
+
+}
+
+void Quadrant::sendMidiControlChange(uint8_t control_number, uint8_t val, uint8_t chan) {
+
+  out.sendMidiControlChange(control_number, val, chan);
+
+}
+
+void Quadrant::handleMidiThru(void) {
+
+  out.handleMidiThru();
 
 }
 

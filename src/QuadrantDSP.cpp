@@ -10,6 +10,7 @@ void QuadrantDSP::begin(void){
   }
 
   _thresh = QUADRANT_THRESH_DEFAULT_MM;
+  _initFilter(QUADRANT_FILTER_LENGTH_DEFAULT);
   _filter_enabled = false;
   _timestamp = 0;
 
@@ -83,19 +84,9 @@ void QuadrantDSP::calibrateOffsets(void) {
 
 }
 
-void QuadrantDSP::initFilter(uint8_t len) {
+void QuadrantDSP::enableFilter(bool enabled) {
 
-  // simple boxcar filter
-  _filter = (uint16_t*) malloc(len * 4 * sizeof(uint16_t));
-
-  for (int i=0; i<(len*4); i++) {
-      _filter[i] = 0xffff;
-  }
-
-  _len_filter = len;
-  _ifilter = 0;
-
-  _filter_enabled = true;
+  _filter_enabled = enabled;
 
 }
 
@@ -130,23 +121,26 @@ uint32_t QuadrantDSP::getTimestamp(void) {
 
 }
 
-uint16_t QuadrantDSP::getLidarDistance(int index) {
+float QuadrantDSP::getLidarDistance(int index) {
 
-  // distance in mm
+  // return distance in mm
 
-  return _distance[index];
+  long tmp ;
 
-}
+  if (_filter_enabled) {
 
-float QuadrantDSP::getLidarDistanceFiltered(int index) {
+    tmp = 0;
+    for (int j=0; j<_len_filter; j++) {
+        tmp += _filter[j*4 + index];
+    }
 
-  long tmp = 0;
+    return float(tmp) / _len_filter;
 
-  for (int j=0; j<_len_filter; j++) {
-      tmp += _filter[j*4 + index];
+  } else {
+
+    return _distance[index];
+
   }
-
-  return float(tmp) / _len_filter;
 
 }
 
@@ -183,11 +177,7 @@ float QuadrantDSP::getElevation(void) {
 
   for (int i=0; i<4; i++) {
     if (_engaged[i]) {
-      if (_filter_enabled) {
-        total_distance += getLidarDistanceFiltered(i);      
-      } else {
-        total_distance += _distance[i];      
-      }
+      total_distance += getLidarDistance(i);      
       count += 1;
     }
   }
@@ -210,12 +200,8 @@ float QuadrantDSP::getPitch(void) {
 
   // returns a value between -1 and 1
 
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(1) - getLidarDistanceFiltered(3),
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[1] - _distance[3], QUADRANT_HEIGHT_MM) / (M_PI/2);
-  }
+  return atan2(getLidarDistance(1) - getLidarDistance(3),
+                QUADRANT_HEIGHT_MM) / (M_PI/2);
 
 }
 
@@ -229,12 +215,8 @@ float QuadrantDSP::getRoll(void) {
 
   // returns a value between -1 and 1
 
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(2),
-                  QUADRANT_WIDTH_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[0] - _distance[2], QUADRANT_WIDTH_MM) / (M_PI/2);
-  }
+  return atan2(getLidarDistance(0) - getLidarDistance(2),
+                QUADRANT_WIDTH_MM) / (M_PI/2);
 
 }
 
@@ -248,14 +230,25 @@ float QuadrantDSP::getArc(void) {
 
   // returns a value between -1 and 1
 
-  if (_filter_enabled) {
-    return atan2(getLidarDistanceFiltered(0) - getLidarDistanceFiltered(1)
-                  + getLidarDistanceFiltered(2) - getLidarDistanceFiltered(3),
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
-  } else {
-    return atan2(_distance[0] - _distance[1] + _distance[2] - _distance[3],
-                  QUADRANT_HEIGHT_MM) / (M_PI/2);
+  return atan2(getLidarDistance(0) - getLidarDistance(1)
+                + getLidarDistance(2) - getLidarDistance(3),
+                QUADRANT_HEIGHT_MM) / (M_PI/2);
+
+}
+
+// private
+
+void QuadrantDSP::_initFilter(uint8_t len) {
+
+  // simple boxcar filter
+  _filter = (uint16_t*) malloc(len * 4 * sizeof(uint16_t));
+
+  for (int i=0; i<(len*4); i++) {
+      _filter[i] = 0xffff;
   }
+
+  _len_filter = len;
+  _ifilter = 0;
 
 }
 

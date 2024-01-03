@@ -27,15 +27,15 @@ void QuadrantOut::begin(void){
   _report_bitmask = 0x0;
 
   // default report config
-  configureReport(REPORT_FIELD_TIMESTAMP, true);
-  configureReport(REPORT_FIELD_LIDAR0, true);
-  configureReport(REPORT_FIELD_LIDAR1, true);
-  configureReport(REPORT_FIELD_LIDAR2, true);
-  configureReport(REPORT_FIELD_LIDAR3, true);
-  configureReport(REPORT_FIELD_ELEVATION, true);
-  configureReport(REPORT_FIELD_PITCH, true);
-  configureReport(REPORT_FIELD_ROLL, true);
-  configureReport(REPORT_FIELD_ARC, true);
+  configureReport(QUADRANT_REPORT_FIELD_TIMESTAMP, true);
+  configureReport(QUADRANT_REPORT_FIELD_LIDAR0, true);
+  configureReport(QUADRANT_REPORT_FIELD_LIDAR1, true);
+  configureReport(QUADRANT_REPORT_FIELD_LIDAR2, true);
+  configureReport(QUADRANT_REPORT_FIELD_LIDAR3, true);
+  configureReport(QUADRANT_REPORT_FIELD_ELEVATION, true);
+  configureReport(QUADRANT_REPORT_FIELD_PITCH, true);
+  configureReport(QUADRANT_REPORT_FIELD_ROLL, true);
+  configureReport(QUADRANT_REPORT_FIELD_ARC, true);
 
   // gate pins
   for (int i=0; i<4; i++) {
@@ -66,7 +66,7 @@ void QuadrantOut::displayStartupLeds(void) {
 
 }
 
-void QuadrantOut::configureReport(enum REPORT_FIELD field, bool enabled) {
+void QuadrantOut::configureReport(enum QUADRANT_REPORT_FIELD field, bool enabled) {
 
   if (enabled) {
     _report_bitmask |=  (1 << field);
@@ -81,54 +81,62 @@ void QuadrantOut::updateReport(QuadrantDSP *dsp) {
   JsonObject jsonObject;
   _report->clear();
 
-  if (_report_bitmask & (1 << REPORT_FIELD_TIMESTAMP)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_TIMESTAMP)) {
     jsonObject = _report->to<JsonObject>();
     jsonObject["ts"] = dsp->getTimestamp();
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR0)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_LIDAR0)) {
     jsonObject = _report->createNestedObject("l0");
     jsonObject["en"] = dsp->isLidarEngaged(0);
-    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(0)) : dsp->getLidarDistance(0);
+    jsonObject["dist"] = dsp->isFilterEnabled() ?
+                          _round3(dsp->getLidarDistance(0)) :
+                          dsp->getLidarDistance(0);
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR1)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_LIDAR1)) {
     jsonObject = _report->createNestedObject("l1");
     jsonObject["en"] = dsp->isLidarEngaged(1);
-    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(1)) : dsp->getLidarDistance(1);
+    jsonObject["dist"] = dsp->isFilterEnabled() ?
+                          _round3(dsp->getLidarDistance(1)) :
+                          dsp->getLidarDistance(1);
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR2)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_LIDAR2)) {
     jsonObject = _report->createNestedObject("l2");
     jsonObject["en"] = dsp->isLidarEngaged(2);
-    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(2)) : dsp->getLidarDistance(2);
+    jsonObject["dist"] = dsp->isFilterEnabled() ?
+                          _round3(dsp->getLidarDistance(2)) :
+                          dsp->getLidarDistance(2);
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_LIDAR3)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_LIDAR3)) {
     jsonObject = _report->createNestedObject("l3");
     jsonObject["en"] = dsp->isLidarEngaged(3);
-    jsonObject["dist"] = dsp->isFilterEnabled() ? _round3(dsp->getLidarDistanceFiltered(3)) : dsp->getLidarDistance(3);
+    jsonObject["dist"] = dsp->isFilterEnabled() ?
+                          _round3(dsp->getLidarDistance(3)) :
+                          dsp->getLidarDistance(3);
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_ELEVATION)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_ELEVATION)) {
     jsonObject = _report->createNestedObject("elevation");
     jsonObject["en"] = dsp->isElevationEngaged();
     jsonObject["val"] = _round3(dsp->getElevation());
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_PITCH)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_PITCH)) {
     jsonObject = _report->createNestedObject("pitch");
     jsonObject["en"] = dsp->isPitchEngaged();
     jsonObject["val"] = _round3(dsp->getPitch());
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_ROLL)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_ROLL)) {
     jsonObject = _report->createNestedObject("roll");
     jsonObject["en"] = dsp->isRollEngaged();
     jsonObject["val"] = _round3(dsp->getRoll());
   }
 
-  if (_report_bitmask & (1 << REPORT_FIELD_ARC)) {
+  if (_report_bitmask & (1 << QUADRANT_REPORT_FIELD_ARC)) {
     jsonObject = _report->createNestedObject("arc");
     jsonObject["en"] = dsp->isArcEngaged();
     jsonObject["val"] = _round3(dsp->getArc());

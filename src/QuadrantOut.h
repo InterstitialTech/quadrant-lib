@@ -6,24 +6,12 @@
 #include "QuadrantCommon.h"
 #include "AD5317R.h"
 
-
 class QuadrantOut {
 
   public:
 
     void begin(void);
-    enum REPORT_FIELD{
-      REPORT_FIELD_TIMESTAMP= 0,
-      REPORT_FIELD_LIDAR0 = 1,
-      REPORT_FIELD_LIDAR1 = 2,
-      REPORT_FIELD_LIDAR2 = 3,
-      REPORT_FIELD_LIDAR3 = 4,
-      REPORT_FIELD_ELEVATION = 5,
-      REPORT_FIELD_PITCH = 6,
-      REPORT_FIELD_ROLL = 7,
-      REPORT_FIELD_ARC = 8
-    };
-    void configureReport(enum REPORT_FIELD, bool enabled);
+    void configureReport(enum QUADRANT_REPORT_FIELD field, bool enabled);
     void updateReport(QuadrantDSP *dsp);
 
     // OUTPUTS

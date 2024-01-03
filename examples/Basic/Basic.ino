@@ -1,6 +1,6 @@
 /*
 
-  NewBasic.ino
+  Basic.ino
   Chris Chronopoulos, 2023
 
 */
@@ -14,7 +14,6 @@ void setup() {
 
   quadrant.begin();
   quadrant.run();
-
 
 }
 
