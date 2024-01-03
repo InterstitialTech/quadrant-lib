@@ -40,6 +40,7 @@ unsigned long tnow, tlast;
 void setup(void) {
 
   quadrant.begin();
+  quadrant.enableFilter(true);
   quadrant.run();
 
 }
