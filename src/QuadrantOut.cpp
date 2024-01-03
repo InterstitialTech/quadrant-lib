@@ -197,15 +197,11 @@ void QuadrantOut::handleMidiThru(void) {
 
   int c;
 
-  Serial.println("checking...");
   while((Serial2.available() > 0)) {
-    Serial.println("\thello input..");
     if ((c = Serial2.read()) >= 0) {
-      Serial.println("\t\tforwarding!");
       QUADRANT_SOFTSERIAL.write((uint8_t)c);
     }
   }
-  Serial.println("...done checking:");
 
 }
 
