@@ -1,11 +1,9 @@
-#include <Wire.h>
 #include <MIDI.h>
 #include "QuadrantOut.h"
 
-SerialPIO QUADRANT_SOFTSERIAL(11, SerialPIO::NOPIN);
-MIDI_NAMESPACE::SerialMIDI<SerialPIO> QUADRANT_SOFTSERIALMIDI(QUADRANT_SOFTSERIAL);
-MIDI_CREATE_INSTANCE(SerialPIO, QUADRANT_SOFTSERIALMIDI, QUADRANT_MIDI)
-
+SerialPIO QUADRANT_SOFTSERIAL(QUADRANT_MIDI_OUT_PIN, SerialPIO::NOPIN);
+MIDI_NAMESPACE::SerialMIDI<SerialPIO> QUADRANT_SOFTSERIAL_MIDI_OUT(QUADRANT_SOFTSERIAL);
+MIDI_CREATE_INSTANCE(SerialPIO, QUADRANT_SOFTSERIAL_MIDI_OUT, QUADRANT_MIDI_OUT)
 
 void QuadrantOut::begin(void){
 
@@ -15,21 +13,14 @@ void QuadrantOut::begin(void){
     digitalWrite(_ledPins[i], LOW);
   }
 
-  // DAC
-  Wire1.setSDA(6);
-  Wire1.setSCL(7);
-  Wire1.setClock(400000);
-  Wire1.begin();
+  // MIDI in
+  Serial2.end();
+  Serial2.setRX(QUADRANT_MIDI_IN_PIN); // same as INPUT_PULLDOWN below
+  Serial2.begin(31250);
 
-  // gate pins
-  for (int i=0; i<4; i++) {
-    pinMode(_gatePins[i], OUTPUT); 
-    digitalWrite(_gatePins[i], LOW);
-  }
-
-  // MIDI
+  // MIDI out
   QUADRANT_SOFTSERIAL.setInverted(true,true);
-  QUADRANT_MIDI.begin();
+  QUADRANT_MIDI_OUT.begin();
 
   // init JSON report
   _report = new StaticJsonDocument<512>;;
@@ -45,6 +36,17 @@ void QuadrantOut::begin(void){
   configureReport(REPORT_FIELD_PITCH, true);
   configureReport(REPORT_FIELD_ROLL, true);
   configureReport(REPORT_FIELD_ARC, true);
+
+  // gate pins
+  for (int i=0; i<4; i++) {
+    pinMode(_gatePins[i], OUTPUT); 
+    digitalWrite(_gatePins[i], LOW);
+  }
+
+  // DAC
+  _dac = new AD5317R(QUADRANT_DAC_NSYNC_PIN, QUADRANT_DAC_SCLK_PIN,
+                      QUADRANT_DAC_SDIN_PIN, QUADRANT_DAC_NLDAC_PIN);
+  _dac->begin();
 
 }
 
@@ -165,35 +167,47 @@ void QuadrantOut::setGate(int index, int state) {
 
 void QuadrantOut::sendMidiNoteOn(uint8_t note, uint8_t vel, uint8_t chan){
 
-  QUADRANT_MIDI.sendNoteOn(note, vel, chan);
+  QUADRANT_MIDI_OUT.sendNoteOn(note, vel, chan);
 
 }
 
 void QuadrantOut::sendMidiNoteOff(uint8_t note, uint8_t chan){
 
-  QUADRANT_MIDI.sendNoteOff(note, 0, chan);
+  QUADRANT_MIDI_OUT.sendNoteOff(note, 0, chan);
 
 }
 
 void QuadrantOut::sendMidiControlChange(uint8_t control_number, uint8_t val, uint8_t chan){
 
-  QUADRANT_MIDI.sendControlChange(control_number, val, chan);
+  QUADRANT_MIDI_OUT.sendControlChange(control_number, val, chan);
+
+}
+
+void QuadrantOut::handleMidiThru(void) {
+
+  // simple low-level passthrough
+
+  int c;
+
+  Serial.println("checking...");
+  while((Serial2.available() > 0)) {
+    Serial.println("\thello input..");
+    if ((c = Serial2.read()) >= 0) {
+      Serial.println("\t\tforwarding!");
+      QUADRANT_SOFTSERIAL.write((uint8_t)c);
+    }
+  }
+  Serial.println("...done checking:");
 
 }
 
 // private methods below
 
-void QuadrantOut::_writeDac(uint8_t chan, int value){
+void QuadrantOut::_writeDac(uint8_t chan, uint16_t value){
 
-  if (value > 1023) {
-    value = 1023;
-  }
+  if (chan > 3) chan = 3;
 
-  Wire1.beginTransmission(byte(0x58));
-  Wire1.write(_dacAddrs[chan]);
-  Wire1.write(value >> 2);
-  Wire1.write((value & 0x03) << 6);
-  Wire1.endTransmission();
+  _dac->setChannelValue(_dacAddrs[chan], value);
 
 }
 
