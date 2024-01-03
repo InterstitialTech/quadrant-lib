@@ -18,6 +18,17 @@ void QuadrantOut::begin(void){
   Serial2.setRX(QUADRANT_MIDI_IN_PIN); // same as INPUT_PULLDOWN below
   Serial2.begin(31250);
 
+  // DAC
+  _dac = new AD5317R(QUADRANT_DAC_NSYNC_PIN, QUADRANT_DAC_SCLK_PIN,
+                      QUADRANT_DAC_SDIN_PIN, QUADRANT_DAC_NLDAC_PIN);
+  _dac->begin();
+
+  // gate pins
+  for (int i=0; i<4; i++) {
+    pinMode(_gatePins[i], OUTPUT); 
+    digitalWrite(_gatePins[i], LOW);
+  }
+
   // MIDI out
   QUADRANT_SOFTSERIAL.setInverted(true,true);
   QUADRANT_MIDI_OUT.begin();
@@ -36,17 +47,6 @@ void QuadrantOut::begin(void){
   configureReport(QUADRANT_REPORT_FIELD_PITCH, true);
   configureReport(QUADRANT_REPORT_FIELD_ROLL, true);
   configureReport(QUADRANT_REPORT_FIELD_ARC, true);
-
-  // gate pins
-  for (int i=0; i<4; i++) {
-    pinMode(_gatePins[i], OUTPUT); 
-    digitalWrite(_gatePins[i], LOW);
-  }
-
-  // DAC
-  _dac = new AD5317R(QUADRANT_DAC_NSYNC_PIN, QUADRANT_DAC_SCLK_PIN,
-                      QUADRANT_DAC_SDIN_PIN, QUADRANT_DAC_NLDAC_PIN);
-  _dac->begin();
 
 }
 

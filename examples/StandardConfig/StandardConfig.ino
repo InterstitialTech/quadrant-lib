@@ -83,13 +83,11 @@ void loop() {
     for (int i=0; i<4; i++) {
       if (quadrant.isLidarEngaged(i)) {
         if (!was_engaged[i]) {
-          Serial.println("sending note on");
           quadrant.sendMidiNoteOn(midi_notes[i], 127, MIDI_CHAN);
         }
         was_engaged[i] = true;
       } else {
         if (was_engaged[i]) {
-          Serial.println("sending note off");
           quadrant.sendMidiNoteOff(midi_notes[i], MIDI_CHAN);
         }
         was_engaged[i] = false;
