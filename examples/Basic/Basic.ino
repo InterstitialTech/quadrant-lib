@@ -13,7 +13,6 @@ Quadrant quadrant;
 void setup() {
 
   quadrant.begin();
-  // optionally configure here
   quadrant.run();
 
 
@@ -43,10 +42,6 @@ void loop() {
 
 		// print a status report (in JSON format) to the USB serial monitor
 		quadrant.printReportToSerial();
-
-	} else {
-
-      // optionally do other stuff
 
   }
 

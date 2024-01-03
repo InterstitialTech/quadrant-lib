@@ -39,7 +39,7 @@ void Quadrant::update(void) {
 
 }
 
-bool Quadrant::getLidarDistance(int index) {
+uint16_t Quadrant::getLidarDistance(int index) {
 
 	return dsp.getLidarDistance(index);
 
@@ -70,3 +70,38 @@ void Quadrant::printReportToSerial(void) {
 
 }
 
+#ifndef QUADRANT_CUSTOM_MULTICORE
+
+#define SAMPLE_PERIOD_US 23000
+
+static Quadrant *_quadrant;
+static unsigned long _tnow, _tlast=0;
+
+void setup1(void) {
+
+  uint32_t word;
+
+  // block until we receive the go cue from the other core
+  while (1) {
+    word = rp2040.fifo.pop();
+    if (word == 0xdeadbeef) {
+      word = rp2040.fifo.pop();
+      _quadrant = (Quadrant*) word;
+      break;
+    }
+  }
+
+}
+
+void loop1(void) {
+
+  _tnow = micros();
+  if ((_tnow - _tlast) > SAMPLE_PERIOD_US) {
+    _quadrant->daq.update();
+    _quadrant->daq.pushToFifo();
+    _tlast = _tnow;
+  }
+
+}
+
+#endif

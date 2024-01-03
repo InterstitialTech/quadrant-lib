@@ -22,7 +22,7 @@ class Quadrant {
     void update(void);
 
 		// data getters
-		bool getLidarDistance(int index);
+		uint16_t getLidarDistance(int index);
 		bool isLidarEngaged(int index);
 
 		// output setters
@@ -37,37 +37,5 @@ class Quadrant {
 
 };
 
-
-// TODO: move this stuff to a new "multicore.h" header, switch on ifdef
-
-#define SAMPLE_PERIOD_US 23000
-
-void setup1(void) {
-
-	Quadrant *_quadrant;
-	static unsigned long tnow, tlast=0;
-  uint32_t word;
-
-  // block until we receive the go cue from the other core
-  while (1) {
-    word = rp2040.fifo.pop();
-    if (word == 0xdeadbeef) {
-      word = rp2040.fifo.pop();
-      _quadrant = (Quadrant*) word;
-      break;
-    }
-  }
-
-	// core 1 loop
-  while (1) {
-		tnow = micros();
-		if ((tnow - tlast) > SAMPLE_PERIOD_US) {
-			_quadrant->daq.update();
-			_quadrant->daq.pushToFifo();
-			tlast = tnow;
-		}
-	}
-
-}
 
 #endif
