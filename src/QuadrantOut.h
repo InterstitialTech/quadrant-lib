@@ -13,6 +13,11 @@ class QuadrantOut {
     void begin(void);
     void configureReport(enum QUADRANT_REPORT_FIELD field, bool enabled);
     void updateReport(QuadrantDSP *dsp);
+    void handleMidiThru(void);
+
+    // INPUTS
+    bool dip1(void);
+    bool dip2(void);
 
     // OUTPUTS
     void displayStartupLeds(void);
@@ -22,7 +27,6 @@ class QuadrantOut {
     void sendMidiNoteOn(uint8_t, uint8_t, uint8_t);
     void sendMidiNoteOff(uint8_t, uint8_t);
     void sendMidiControlChange(uint8_t, uint8_t, uint8_t);
-    void handleMidiThru(void);
     void printReportToSerial(void);
 
   private:

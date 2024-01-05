@@ -15,7 +15,7 @@ void QuadrantOut::begin(void){
 
   // MIDI in
   Serial2.end();
-  Serial2.setRX(QUADRANT_MIDI_IN_PIN); // same as INPUT_PULLDOWN below
+  Serial2.setRX(QUADRANT_MIDI_IN_PIN);
   Serial2.begin(31250);
 
   // DAC
@@ -47,6 +47,22 @@ void QuadrantOut::begin(void){
   configureReport(QUADRANT_REPORT_FIELD_PITCH, true);
   configureReport(QUADRANT_REPORT_FIELD_ROLL, true);
   configureReport(QUADRANT_REPORT_FIELD_ARC, true);
+
+  // DIP pins
+  pinMode(QUADRANT_DIP1_PIN, INPUT_PULLUP); 
+  pinMode(QUADRANT_DIP2_PIN, INPUT_PULLUP); 
+
+}
+
+bool QuadrantOut::dip1(void) {
+
+  return !digitalRead(QUADRANT_DIP1_PIN);
+
+}
+
+bool QuadrantOut::dip2(void) {
+
+  return !digitalRead(QUADRANT_DIP2_PIN);
 
 }
 

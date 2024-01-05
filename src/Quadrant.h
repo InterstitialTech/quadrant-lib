@@ -38,6 +38,8 @@ class Quadrant {
     float getRoll(void);
     bool isArcEngaged(void);
     float getArc(void);
+    bool dip1(void);
+    bool dip2(void);
 
 		// output
 		void setLed(int chan, int state);

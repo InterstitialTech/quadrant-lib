@@ -33,7 +33,11 @@
 #include "Quadrant.h"
 Quadrant quadrant;
 
-int midi_notes[4] = {60, 64, 67, 70};
+int midi_notes_0[4] = {48, 52, 55, 59};   // 1MD7
+int midi_notes_1[4] = {60, 64, 67, 71};   // 2mD7
+int midi_notes_2[4] = {72, 76, 79, 83};   // 4MD7
+int midi_notes_3[4] = {84, 88, 91, 95};   // 5MD7
+
 bool was_engaged[4] = {false};
 unsigned long tnow, tlast;
 
@@ -46,6 +50,9 @@ void setup(void) {
 }
 
 void loop() {
+
+  int *midi_notes;
+  uint8_t dip;
 
   if (quadrant.newDataReady()) {
 
@@ -78,6 +85,23 @@ void loop() {
     //  output arc to CV 3
     if (quadrant.isArcEngaged()) {
       quadrant.setCV(3, 2.5 + quadrant.getArc() * 2.5 * CV_GAIN_ARC);
+    }
+
+    // select midi notes based on DIP switches
+    dip = (quadrant.dip1() << 1) | (quadrant.dip2() << 0);
+    switch (dip) {
+      case 0:
+        midi_notes = midi_notes_0;
+        break;
+      case 1:
+        midi_notes = midi_notes_1;
+        break;
+      case 2:
+        midi_notes = midi_notes_2;
+        break;
+      case 3:
+        midi_notes = midi_notes_3;
+        break;
     }
 
     // output MIDI notes

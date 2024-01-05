@@ -139,6 +139,18 @@ float Quadrant::getArc(void) {
 
 }
 
+bool Quadrant::dip1(void) {
+
+  return out.dip1();
+
+}
+
+bool Quadrant::dip2(void) {
+
+  return out.dip2();
+
+}
+
 // output
 
 void Quadrant::setLed(int chan, int state) {
