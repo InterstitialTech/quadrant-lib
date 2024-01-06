@@ -13,6 +13,7 @@ class QuadrantOut {
     void begin(void);
     void configureReport(enum QUADRANT_REPORT_FIELD field, bool enabled);
     void updateReport(QuadrantDSP *dsp);
+		void reportEvent(const char *event_name);
     void handleMidiThru(void);
 
     // INPUTS

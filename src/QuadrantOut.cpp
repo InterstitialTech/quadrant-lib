@@ -158,6 +158,17 @@ void QuadrantOut::updateReport(QuadrantDSP *dsp) {
     jsonObject["val"] = _round3(dsp->getArc());
   }
 
+	// prepare for events
+	_report->createNestedArray("events");
+
+}
+
+void QuadrantOut::reportEvent(const char *event_name) {
+
+  JsonArray events = (*_report)["events"];
+
+	events.add(event_name);
+
 }
 
 // OUTPUTS
