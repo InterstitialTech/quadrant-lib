@@ -19,8 +19,11 @@
   The lidar values, the sample rate, and aggregate parameters are all
   printed to USB serial in JSON format.
 
-  Beam crossings generate MIDI notes on the TRS MIDI jack. To change the note
-  values or MIDI channel, set midi_notes[] and MIDI_CHAN respectively.
+  Beam crossings generate MIDI notes on the TRS MIDI jack. The set of MIDI
+  notes can be selected "in the field" via the 2-channel DIP switch (4 options).
+
+  To change the note values or MIDI channel, set midi_notes[] and MIDI_CHAN
+  respectively.
 
 */
 
@@ -38,9 +41,6 @@ int midi_notes_1[4] = {60, 64, 67, 71};   // 2mD7
 int midi_notes_2[4] = {72, 76, 79, 83};   // 4MD7
 int midi_notes_3[4] = {84, 88, 91, 95};   // 5MD7
 
-bool was_engaged[4] = {false};
-unsigned long tnow, tlast;
-
 void setup(void) {
 
   quadrant.begin();
@@ -50,6 +50,8 @@ void setup(void) {
 }
 
 void loop() {
+
+  static bool was_engaged[4] = {false};
 
   int *midi_notes;
   uint8_t dip;
@@ -104,16 +106,21 @@ void loop() {
         break;
     }
 
-    // output MIDI notes
+    // detect note on, note off. send over MIDI and USB report
+    char event[16];
     for (int i=0; i<4; i++) {
       if (quadrant.isLidarEngaged(i)) {
         if (!was_engaged[i]) {
           quadrant.sendMidiNoteOn(midi_notes[i], 127, MIDI_CHAN);
+          sprintf(event, "on_%d", i);
+          quadrant.out.reportEvent(event);
         }
         was_engaged[i] = true;
       } else {
         if (was_engaged[i]) {
           quadrant.sendMidiNoteOff(midi_notes[i], MIDI_CHAN);
+          sprintf(event, "off_%d", i);
+          quadrant.out.reportEvent(event);
         }
         was_engaged[i] = false;
       }
