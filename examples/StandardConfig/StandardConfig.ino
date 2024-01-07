@@ -58,19 +58,19 @@ void loop() {
 
   if (quadrant.newDataReady()) {
 
-		// update local state machine and status report
-		quadrant.update();
+    // update local state machine and status report
+    quadrant.update();
 
     // set LEDs and Gates according to engagement
-		for (int i=0; i<4; i++) {
-			if (quadrant.isLidarEngaged(i)) {
-				quadrant.setLed(i, HIGH);
+    for (int i=0; i<4; i++) {
+      if (quadrant.isLidarEngaged(i)) {
+        quadrant.setLed(i, HIGH);
         quadrant.setGate(i, HIGH);
-			} else {
-				quadrant.setLed(i, LOW);
+      } else {
+        quadrant.setLed(i, LOW);
         quadrant.setGate(i, LOW);
-			}
-		}
+      }
+    }
 
     //  output elevation to CV 0
     if (quadrant.isElevationEngaged()) {
@@ -126,8 +126,8 @@ void loop() {
       }
     }
 
-		// print a JSON status report to the USB serial monitor
-		quadrant.printReportToSerial();
+    // print a JSON status report to the USB serial monitor
+    quadrant.printReportToSerial();
 
   }
 
